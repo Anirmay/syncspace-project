@@ -1,38 +1,45 @@
-// client/src/App.jsx
+import React, { useContext } from 'react';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
+import { AuthContext } from './context/AuthContext';
+import HomePage from './pages/HomePage';
+import AuthPage from './pages/AuthPage'; // 👈 Import your new stylish page
 
-import React, { useContext } from 'react'; // 👈 Import useContext
-import { Routes, Route, Link } from 'react-router-dom';
-import { AuthContext } from './context/AuthContext'; // 👈 Import AuthContext
-import RegisterPage from './pages/RegisterPage';
-import LoginPage from './pages/LoginPage';
+// A simple Dashboard placeholder for logged-in users
+const Dashboard = () => {
+    const { currentUser, logout } = useContext(AuthContext);
+    return (
+        <div className="p-8 bg-slate-900 text-white min-h-screen">
+            <h1 className="text-2xl font-bold">Welcome to your Dashboard, {currentUser.user.username}!</h1>
+            <p>Your collaborative workspace is ready.</p>
+            <button onClick={logout} className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg">Logout</button>
+        </div>
+    );
+};
 
 function App() {
-  const { currentUser, logout } = useContext(AuthContext); // 👈 Get user and logout function
+  const { currentUser } = useContext(AuthContext);
 
   return (
-    <div>
-      <nav style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-        {currentUser ? (
-          <>
-            <span>Welcome, {currentUser.user.username}!</span>
-            <button onClick={logout}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/register">Register</Link>
-            <Link to="/login">Login</Link>
-          </>
-        )}
-      </nav>
-      <hr />
-
-      <h1>SyncSpace</h1>
+    <>
       <Routes>
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route 
+            path="/" 
+            element={currentUser ? <Dashboard /> : <HomePage />} 
+        />
+        
+        {/* UPDATED: Both routes now point to AuthPage */}
+        <Route 
+            path="/register" 
+            element={currentUser ? <Navigate to="/" /> : <AuthPage />} 
+        />
+        <Route 
+            path="/login" 
+            element={currentUser ? <Navigate to="/" /> : <AuthPage />} 
+        />
       </Routes>
-    </div>
+    </>
   );
 }
 
 export default App;
+
