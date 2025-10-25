@@ -1,5 +1,3 @@
-// server/models/User.js
-
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema(
@@ -20,6 +18,14 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // --- NEW FIELDS ---
+    passwordResetToken: {
+        type: String,
+    },
+    passwordResetExpires: {
+        type: Date,
+    },
+    // --- END NEW FIELDS ---
   },
   { timestamps: true }
 );

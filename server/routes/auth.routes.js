@@ -1,15 +1,11 @@
-// server/routes/auth.routes.js
-
 const express = require('express');
-// 👇 Import both register and login
-const { register, login } = require('../controllers/auth.controller.js');
+const { register, login, forgotPassword, resetPassword } = require('../controllers/auth.controller.js'); // <-- Import new functions
 
 const router = express.Router();
 
-// POST /api/auth/register
 router.post('/register', register);
-
-// POST /api/auth/login  (👈 New Route)
 router.post('/login', login);
+router.post('/forgot-password', forgotPassword);        // <-- NEW ROUTE
+router.patch('/reset-password/:token', resetPassword); // <-- NEW ROUTE (use PATCH for update)
 
 module.exports = router;
