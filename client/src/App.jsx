@@ -9,10 +9,23 @@ import ProfilePage from './pages/ProfilePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 import DashboardPage from './pages/DashboardPage'; // Keep import for the /dashboard route
 import WorkspacePage from './pages/WorkspacePage';
+import ChatPage from './pages/ChatPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
 
 // Simple component to protect routes
 // It checks if a user is logged in using AuthContext.
 // If not logged in, it redirects to the /login page.
+
+
+// const ContactPage = () => (
+//      <div className="min-h-screen bg-slate-900 text-white p-8">
+//         <h1 className="text-3xl font-bold mb-4">Contact Us</h1>
+//         <p className="text-slate-400">Have questions or feedback? Get in touch via email at <a href="mailto:support@syncspace.example" className="text-indigo-400 hover:underline">support@syncspace.example</a>.</p>
+//          <Link to="/" className="text-indigo-400 hover:underline mt-4 inline-block">&larr; Back Home</Link>
+//     </div>
+// );
+
 const ProtectedRoute = ({ children }) => {
     const { currentUser } = useContext(AuthContext);
     if (!currentUser) {
@@ -29,75 +42,36 @@ function App() {
 
   return (
     <>
-      {/* Routes define the different pages of the application */}
       <Routes>
-        {/* Root Route: Always shows HomePage */}
-        <Route
-            path="/"
-            element={<HomePage />}
-        />
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/register" element={currentUser ? <Navigate to="/" /> : <AuthPage />} />
+        <Route path="/login" element={currentUser ? <Navigate to="/" /> : <AuthPage />} />
+        <Route path="/forgot-password" element={currentUser ? <Navigate to="/" /> : <ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={currentUser ? <Navigate to="/" /> : <ResetPasswordPage />} />
+        
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
-        {/* Authentication Routes: Redirect to home if already logged in */}
+        {/* --- PROTECTED ROUTES --- */}
+        <Route path="/profile" element={ <ProtectedRoute> <ProfilePage /> </ProtectedRoute> } />
+        <Route path="/account-settings" element={ <ProtectedRoute> <AccountSettingsPage /> </ProtectedRoute> } />
+        <Route path="/dashboard" element={ <ProtectedRoute> <DashboardPage /> </ProtectedRoute> } />
+        <Route path="/workspace/:workspaceId" element={ <ProtectedRoute> <WorkspacePage /> </ProtectedRoute> } />
+        {/* --- NEW: Chat Route --- */}
         <Route
-            path="/register"
-            element={currentUser ? <Navigate to="/" /> : <AuthPage />}
+            path="/chat"
+            element={ <ProtectedRoute> <ChatPage /> </ProtectedRoute> }
         />
-         <Route
-            path="/login"
-            element={currentUser ? <Navigate to="/" /> : <AuthPage />}
-        />
-
-        {/* Password Reset Routes: Redirect to home if already logged in */}
-        <Route
-            path="/forgot-password"
-            element={currentUser ? <Navigate to="/" /> : <ForgotPasswordPage />}
-        />
-        <Route
-            path="/reset-password/:token" // ":token" captures the token from the URL
-            element={currentUser ? <Navigate to="/" /> : <ResetPasswordPage />}
-        />
-
-        {/* --- PROTECTED ROUTES (Require Login) --- */}
-        {/* Profile Page Route */}
-        <Route
-            path="/profile"
-            element={
-                <ProtectedRoute> {/* Wrap with ProtectedRoute */}
-                    <ProfilePage />
-                </ProtectedRoute>
-            }
-        />
-        {/* Account Settings Route */}
-         <Route
-            path="/account-settings"
-            element={
-                <ProtectedRoute> {/* Wrap with ProtectedRoute */}
-                    <AccountSettingsPage />
-                </ProtectedRoute>
-            }
-        />
-        {/* Dashboard Route */}
-        <Route
-            path="/dashboard"
-            element={
-                <ProtectedRoute> {/* Wrap with ProtectedRoute */}
-                    <DashboardPage />
-                </ProtectedRoute>
-            }
-        />
-        <Route
-            path="/workspace/:workspaceId" // This matches /workspace/SOME_ID
-            element={
-                <ProtectedRoute>
-                    <WorkspacePage />
-                </ProtectedRoute>
-            }
-        />
-         {/* --- END PROTECTED ROUTES --- */}
-
-        {/* Optional: Catch-all route for 404 Not Found (add later if needed) */}
-        {/* <Route path="*" element={<h1>404 Not Found</h1>} /> */}
-
+        {/* --- END NEW --- */}
+        {/* 404 Route */}
+        <Route path="*" element={
+            <div className="min-h-screen bg-slate-900 text-white p-8 text-center">
+                <h1 className="text-4xl font-bold mb-4">404 - Not Found</h1>
+                <p className="text-slate-400">The page you are looking for does not exist.</p>
+                <Link to="/" className="text-indigo-400 hover:underline mt-6 inline-block">Go back home</Link>
+            </div>
+        } />
       </Routes>
     </>
   );

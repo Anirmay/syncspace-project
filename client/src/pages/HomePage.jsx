@@ -54,7 +54,27 @@ const UserIcon = () => (
     </svg>
 );
 
-
+const BellIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.017 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+    </svg>
+);
+const ChatBubbleIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.8}
+    stroke="currentColor"
+    className="w-6 h-6"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M7.5 8.25h9m-9 3.75h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0zM7.5 20.25l1.5-3.75L3 17.25l4.5 3z"
+    />
+  </svg>
+);
 const HomePage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -84,71 +104,118 @@ const HomePage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
+  const linkStyle = "text-slate-300 hover:text-indigo-400 transition-colors px-3 py-2 rounded-md text-sm font-medium";
+  const mobileLinkStyle = "text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-3 text-base";
+  const iconButtonStyle = "text-slate-300 hover:text-indigo-400 focus:outline-none p-1 rounded-full hover:bg-slate-700 relative";
+
 
   return (
     <div className="bg-slate-900 text-white min-h-screen font-inter">
       {/* --- Header --- */}
       <header className="sticky top-0 z-50 bg-slate-900 shadow-md">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold">SyncSpace</Link>
-          {/* --- Desktop Navigation --- */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="#features" className="text-slate-300 hover:text-indigo-400 transition-colors">Features</a>
-            <a href="#testimonials" className="text-slate-300 hover:text-indigo-400 transition-colors">Testimonials</a>
-            {currentUser ? (
-              <>
-                {/* --- My Workspaces Link (Desktop) --- */}
-                <Link to="/dashboard" className="text-slate-300 hover:text-indigo-400 transition-colors">My Workspaces</Link>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8"> {/* Adjusted padding */}
+          <div className="relative flex items-center justify-between h-16">
 
-                {/* Account Icon Dropdown */}
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={toggleDropdown}
-                    className="flex items-center text-slate-300 hover:text-indigo-400 focus:outline-none p-1 rounded-full hover:bg-slate-700"
-                    aria-label="Account menu"
-                  >
-                    <UserIcon />
-                  </button>
-                  <div className={`absolute right-0 mt-2 w-48 bg-slate-800 rounded-md shadow-lg py-1 border border-slate-700 transition-all duration-200 ease-out origin-top-right ${isDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-                    <div className="px-4 py-2 text-sm text-slate-400 border-b border-slate-700">Hi, {currentUser.user?.username || 'User'}!</div>
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" onClick={() => setIsDropdownOpen(false)}>User Profile</Link>
-                    <Link to="/account-settings" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" onClick={() => setIsDropdownOpen(false)}>Account Settings</Link>
-                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">Logout</button>
-                  </div>
+            {/* Logo */}
+            <div className="flex-shrink-0">
+                <Link to="/" className="text-2xl font-bold">SyncSpace</Link>
+            </div>
+            {/* --- Desktop Navigation (Middle Links) --- */}
+            <div className="hidden md:flex md:ml-6 flex-grow items-center justify-center">
+                <div className="flex space-x-4">
+                     {currentUser ? (
+                         <>
+                            {/* Logged In Links */}
+                            <Link to="#" className={linkStyle} aria-disabled="true" style={{opacity: 0.5, cursor: 'not-allowed'}}>Upload Project</Link> {/* Placeholder */}
+                            <Link to="/dashboard" className={linkStyle}>Workflow Board</Link>
+                            <Link to="/dashboard" className={linkStyle}>Create Project</Link>
+                            <Link to="/about" className={linkStyle}>About</Link>
+                            <Link to="/contact" className={linkStyle}>Contact</Link>
+                         </>
+                     ) : (
+                         <>
+                            {/* Logged Out Links */}
+                            <a href="#features" className={linkStyle}>Features</a>
+                            <a href="#testimonials" className={linkStyle}>Testimonials</a>
+                            {/* Add About/Contact here for logged out users if desired */}
+                            <Link to="/about" className={linkStyle}>About</Link>
+                            <Link to="/contact" className={linkStyle}>Contact</Link>
+                         </>
+                     )}
                 </div>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="text-slate-300 hover:text-indigo-400 transition-colors">Login</Link>
-                <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition-colors">Get Started</Link>
-              </>
-            )}
-          </nav>
+            </div>
+          {/* --- Right Side Icons/Buttons --- */}
+            <div className="hidden md:flex items-center space-x-4">
+                {currentUser ? (
+                  <>
+                    <Link to="/chat" className={iconButtonStyle} aria-label="Chat">
+                        <ChatBubbleIcon />
+                    </Link>
+                    {/* Notification Icon */}
+                    <button className={iconButtonStyle} aria-label="Notifications">
+                      <BellIcon />
+                      {/* Optional: Badge */}
+                    </button>
+
+                    {/* Account Icon Dropdown */}
+                    <div className="relative" ref={dropdownRef}>
+                      <button onClick={toggleDropdown} className="flex items-center text-slate-300 hover:text-indigo-400 focus:outline-none p-1 rounded-full hover:bg-slate-700" aria-label="Account menu"> <UserIcon /> </button>
+                      <div className={`absolute right-0 mt-2 w-48 bg-slate-800 rounded-md shadow-lg py-1 border border-slate-700 transition-all duration-200 ease-out origin-top-right ${isDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                         <div className="px-4 py-2 text-sm text-slate-400 border-b border-slate-700">Hi, {currentUser.user?.username || 'User'}!</div>
+                         <Link to="/profile" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" onClick={() => setIsDropdownOpen(false)}>User Profile</Link>
+                         <Link to="/account-settings" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" onClick={() => setIsDropdownOpen(false)}>Account Settings</Link>
+                         <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">Logout</button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className={linkStyle}>Login</Link>
+                    <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition-colors text-sm">Get Started</Link>
+                  </>
+                )}
+            </div>
           {/* --- Mobile Menu Button --- */}
-          <div className="md:hidden">
-            <button onClick={toggleMobileMenu} aria-label="Toggle menu">{isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}</button>
+            <div className="-mr-2 flex md:hidden"> {/* Adjusted margin */}
+              <button onClick={toggleMobileMenu} className="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded={isMobileMenuOpen}>
+                <span className="sr-only">Open main menu</span>
+                {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+              </button>
+            </div>
           </div>
         </div>
+
         {/* --- Mobile Menu --- */}
-        <div className={`md:hidden absolute top-full left-0 w-full bg-slate-800 shadow-xl transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-screen opacity-100 py-4' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-            <nav className="flex flex-col items-center space-y-4 px-6">
-              <a href="#features" className="text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-2" onClick={toggleMobileMenu}>Features</a>
-              <a href="#testimonials" className="text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-2" onClick={toggleMobileMenu}>Testimonials</a>
+        <div className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-700"> {/* Added border */}
               {currentUser ? (
                  <>
-                    {/* --- My Workspaces Link (Mobile) --- */}
-                    <Link to="/dashboard" className="text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-2" onClick={toggleMobileMenu}>My Workspaces</Link>
-                    <Link to="/profile" className="text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-2" onClick={toggleMobileMenu}>User Profile</Link>
-                    <Link to="/account-settings" className="text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-2" onClick={toggleMobileMenu}>Account Settings</Link>
-                    <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition-colors block w-full text-center">Logout</button>
+                    <Link to="#" className={mobileLinkStyle} aria-disabled="true" style={{opacity: 0.5, cursor: 'not-allowed'}} onClick={toggleMobileMenu}>Upload Project</Link>
+                    <Link to="/dashboard" className={mobileLinkStyle} onClick={toggleMobileMenu}>Workflow Board</Link>
+                    <Link to="/dashboard" className={mobileLinkStyle} onClick={toggleMobileMenu}>Create Project</Link>
+                    <Link to="/chat" className={mobileLinkStyle} onClick={toggleMobileMenu}>Chat</Link>
+                    <Link to="/about" className={mobileLinkStyle} onClick={toggleMobileMenu}>About</Link>
+                    <Link to="/contact" className={mobileLinkStyle} onClick={toggleMobileMenu}>Contact</Link>
+                    <hr className="border-slate-700 my-2"/>
+                    {/* Simplified mobile - account links */}
+                    <Link to="/profile" className={mobileLinkStyle} onClick={toggleMobileMenu}>User Profile</Link>
+                    <Link to="/account-settings" className={mobileLinkStyle} onClick={toggleMobileMenu}>Account Settings</Link>
+                    {/* Add Notifications Link */}
+                     <Link to="#" className={mobileLinkStyle} onClick={toggleMobileMenu}>Notifications</Link>
+                    <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg block w-full text-center mt-2">Logout</button>
                  </>
               ) : (
                 <>
-                  <Link to="/login" className="text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-2" onClick={toggleMobileMenu}>Login</Link>
-                  <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition-colors block w-full text-center" onClick={toggleMobileMenu}>Get Started</Link>
+                  <a href="#features" className={mobileLinkStyle} onClick={toggleMobileMenu}>Features</a>
+                  <a href="#testimonials" className={mobileLinkStyle} onClick={toggleMobileMenu}>Testimonials</a>
+                  <Link to="/about" className={mobileLinkStyle} onClick={toggleMobileMenu}>About</Link>
+                  <Link to="/contact" className={mobileLinkStyle} onClick={toggleMobileMenu}>Contact</Link>
+                  <hr className="border-slate-700 my-2"/>
+                  <Link to="/login" className={mobileLinkStyle} onClick={toggleMobileMenu}>Login</Link>
+                  <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg block w-full text-center mt-2" onClick={toggleMobileMenu}>Get Started</Link>
                 </>
               )}
-            </nav>
+            </div>
         </div>
       </header>
       

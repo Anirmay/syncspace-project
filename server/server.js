@@ -6,18 +6,19 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import workspaceRoutes from './routes/workspace.routes.js';
-import boardRoutes from './routes/board.routes.js'; // This is used via workspace routes
+// import boardRoutes from './routes/board.routes.js';
 import taskRoutes from './routes/task.routes.js';   // <-- NEW: Import task routes
+import contactRoutes from './routes/contact.routes.js';
 
 // Load environment variables
 dotenv.config();
 
-// Initialize Express app
-const app = express();
-const PORT = process.env.PORT || 5000; // Use environment variable or default to 5000
 
 // --- Middlewares ---
 // Enable Cross-Origin Resource Sharing for requests from your frontend
+const app = express();
+const PORT = process.env.PORT || 5000;
+
 app.use(cors());
 // Parse incoming requests with JSON payloads
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);         // Handles /api/auth/register, /api/au
 app.use('/api/users', userRoutes);         // Handles /api/users/me, etc.
 app.use('/api/workspaces', workspaceRoutes); // Handles /api/workspaces/, /api/workspaces/:id, and nests board routes
 app.use('/api/tasks', taskRoutes);   
+app.use('/api/contact', contactRoutes);
 
 // --- Database Connection ---
 const connectDB = async () => {
