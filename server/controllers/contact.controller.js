@@ -6,61 +6,81 @@ dotenv.config(); // Ensure environment variables are loaded
 // Controller function to handle contact form submission
 const handleContactForm = async (req, res) => {
     const { name, email, message } = req.body;
+    console.log("--- Contact Form Request Received ---"); // Log entry
+    console.log("Received data:", { name, email, message: message ? 'Yes' : 'No' });
 
     // Basic validation
     if (!name || !email || !message) {
+        console.log("Validation failed: Missing fields.");
         return res.status(400).json({ message: 'Please provide name, email, and message.' });
     }
 
     try {
+        console.log("Validation passed. Configuring transporter...");
+        console.log("Using Email User:", process.env.EMAIL_USER);
+        console.log("Using Email Host:", process.env.EMAIL_HOST);
+        console.log("Using Email Port:", process.env.EMAIL_PORT);
+        console.log("Using Email Secure:", process.env.EMAIL_SECURE);
+        console.log("Using Email Pass:", process.env.EMAIL_PASS ? 'Exists' : 'MISSING!'); // Check if pass exists
+
         // --- Configure Nodemailer Transporter ---
-        // Reuse the transporter setup from your forgotPassword logic
-        // Ensure EMAIL_HOST, EMAIL_PORT, EMAIL_SECURE, EMAIL_USER, EMAIL_PASS are in your .env
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
-            port: parseInt(process.env.EMAIL_PORT || '465', 10), // Ensure port is a number
-            secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports like 587
+            port: parseInt(process.env.EMAIL_PORT || '465', 10),
+            secure: process.env.EMAIL_SECURE === 'true',
             auth: {
-                user: process.env.EMAIL_USER, // Your Gmail address (or service user)
-                pass: process.env.EMAIL_PASS, // Your Gmail App Password (or service pass/key)
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
             },
-             // Add TLS options if needed for certain providers or local testing
-             // tls: {
-             //    rejectUnauthorized: false // Use only for local development if necessary
-             // }
+            // Optional: Add debug logging from nodemailer itself
+            // logger: true,
+            // debug: true, // Enable SMTP connection debug output
         });
+        console.log("Transporter configured.");
+
 
         // --- Define Mail Options ---
         const mailOptions = {
-            from: `"${name}" <${email}>`, // Use sender's name and email (might get flagged as spam by some providers)
-            replyTo: email, // Set the reply-to field correctly
-            to: process.env.EMAIL_USER, // Send the email TO your support address (your EMAIL_USER)
-            subject: `New Contact Form Submission from ${name}`, // Subject line
-            text: `You received a new message from:\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`, // Plain text body
+            from: `"${name}" <${process.env.EMAIL_USER}>`, // Send FROM your own address to avoid spam filters
+            replyTo: email, // Set sender's email as reply-to
+            to: process.env.EMAIL_USER, // Send TO your support address (your EMAIL_USER)
+            subject: `New Contact Form Submission from ${name}`,
+            text: `You received a new message from:\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
             html: `
-                <p>You received a new message from the SyncSpace contact form:</p>
-                <ul>
-                    <li><strong>Name:</strong> ${name}</li>
-                    <li><strong>Email:</strong> <a href="mailto:${email}">${email}</a></li>
-                </ul>
-                <hr>
-                <p><strong>Message:</strong></p>
-                <p>${message.replace(/\n/g, '<br>')}</p> 
-            `, // HTML body
+                <div style="font-family: sans-serif; line-height: 1.6;">
+                    <h2 style="color: #333;">New Contact Form Submission</h2>
+                    <p>You received a new message from the SyncSpace contact form:</p>
+                    <hr style="border: none; border-top: 1px solid #eee;">
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+                    <hr style="border: none; border-top: 1px solid #eee;">
+                    <p><strong>Message:</strong></p>
+                    <div style="background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 5px;">
+                        <p style="margin: 0;">${message.replace(/\n/g, '<br>')}</p> 
+                    </div>
+                </div>
+            `,
         };
+        console.log("Mail options prepared:", { from: mailOptions.from, to: mailOptions.to, subject: mailOptions.subject });
+
 
         // --- Send Mail ---
-        console.log("Attempting to send contact email...");
-        await transporter.sendMail(mailOptions);
-        console.log("Contact email sent successfully.");
+        console.log("Attempting to send contact email via transporter.sendMail...");
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Contact email sent successfully. Message ID:", info.messageId); // Log success
 
         res.status(200).json({ message: 'Message sent successfully! We will get back to you soon.' });
 
     } catch (error) {
-        console.error('Error sending contact email:', error);
-        // Check for specific nodemailer errors if needed
+        // Make sure errors are always logged
+        console.error('!!! CATCH BLOCK - Error sending contact email:', error);
+        // Log specific properties if available
+        if (error.code) console.error("Error Code:", error.code);
+        if (error.command) console.error("Error Command:", error.command);
         res.status(500).json({ message: 'Failed to send message. Please try again later.' });
     }
+    console.log("--- Contact Form Request End ---"); // Log exit
 };
 
 export { handleContactForm };
+

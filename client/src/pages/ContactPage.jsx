@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios'; // <-- Make sure axios is imported
 
-// Simple SVG Icons
+// ... (SVG Icons remain the same) ...
 const MailIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2 inline-block text-indigo-400">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -13,42 +14,48 @@ const PhoneIcon = () => (
     </svg>
 );
 
-
 const ContactPage = () => {
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
     const [statusMessage, setStatusMessage] = useState('');
+    const [isError, setIsError] = useState(false); // State to track if message is an error
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    // --- UPDATED handleSubmit ---
+    const handleSubmit = async (e) => { // Make async
         e.preventDefault();
         setLoading(true);
         setStatusMessage('');
+        setIsError(false);
 
-        // Placeholder: Simulate form submission
-        console.log('Form data submitted (not sent):', formData);
-        setTimeout(() => {
-            setLoading(false);
-            setStatusMessage('Thank you for your message! We will get back to you soon.');
+        try {
+            // Make POST request to backend
+            // --- THIS IS THE REAL API CALL ---
+            const response = await axios.post('http://localhost:5000/api/contact', formData);
+            // --- END REAL API CALL ---
+
+            setStatusMessage(response.data.message); // Set success message from backend
             setFormData({ name: '', email: '', message: '' }); // Clear form
-        }, 1000); // Simulate network delay
-
-        // In a real app, you would send this data to a backend endpoint:
-        // axios.post('/api/contact', formData)
-        //   .then(res => setStatusMessage('Message sent successfully!'))
-        //   .catch(err => setStatusMessage('Error sending message. Please try again.'))
-        //   .finally(() => setLoading(false));
+        } catch (err) {
+            console.error("Contact form error:", err);
+            // Set error message from backend or a default
+            setStatusMessage(err.response?.data?.message || 'Error sending message. Please try again.');
+            setIsError(true); // Mark message as error for styling
+        } finally {
+            setLoading(false); // Stop loading indicator
+        }
     };
+    // --- END UPDATE ---
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
             <div className="container mx-auto max-w-4xl">
                 {/* Header */}
                 <header className="text-center mb-12">
-                    <Link to="/" className="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back Home</Link>
+                     <Link to="/" className="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back Home</Link>
                     <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-3">Contact Us</h1>
                     <p className="text-lg text-slate-400 max-w-2xl mx-auto">
                         We'd love to hear from you. Reach out with questions, feedback, or inquiries.
@@ -72,11 +79,6 @@ const ContactPage = () => {
                                 <PhoneIcon />
                                 <span>+91 8367833266</span>
                             </p>
-                             {/* Optional: Add Address */}
-                            {/* <p className="flex items-start text-slate-300">
-                                <MapPinIcon />
-                                <span>123 Collaboration Way<br/>Suite 100<br/>Innovation City, CA 90210</span>
-                            </p> */}
                         </div>
                     </div>
 
@@ -87,12 +89,7 @@ const ContactPage = () => {
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">Your Name</label>
                                 <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    required
+                                    type="text" id="name" name="name" value={formData.name} onChange={handleChange} required
                                     className="w-full bg-slate-700 rounded p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
                                     placeholder="John Doe"
                                 />
@@ -100,12 +97,7 @@ const ContactPage = () => {
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">Your Email</label>
                                 <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
+                                    type="email" id="email" name="email" value={formData.email} onChange={handleChange} required
                                     className="w-full bg-slate-700 rounded p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
                                     placeholder="you@example.com"
                                 />
@@ -113,27 +105,18 @@ const ContactPage = () => {
                              <div>
                                 <label htmlFor="message" className="block text-sm font-medium text-slate-300 mb-1">Message</label>
                                 <textarea
-                                    id="message"
-                                    name="message"
-                                    rows="4"
-                                    value={formData.message}
-                                    onChange={handleChange}
-                                    required
+                                    id="message" name="message" rows="4" value={formData.message} onChange={handleChange} required
                                     className="w-full bg-slate-700 rounded p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400 resize-none"
                                     placeholder="How can we help?"
                                 ></textarea>
                             </div>
                             <div>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
+                                <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                     {loading ? 'Sending...' : 'Send Message'}
                                 </button>
                             </div>
-                             {statusMessage && (
-                                <p className={`text-sm text-center ${statusMessage.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>
+                            {statusMessage && (
+                                <p className={`text-sm text-center font-medium ${isError ? 'text-red-400' : 'text-green-400'}`}>
                                     {statusMessage}
                                 </p>
                             )}
@@ -146,3 +129,4 @@ const ContactPage = () => {
 };
 
 export default ContactPage;
+
