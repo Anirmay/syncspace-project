@@ -1,32 +1,41 @@
 import express from 'express';
-// Ensure correct path to middleware and controller files, including .js extension
 import { protect } from '../middleware/auth.middleware.js';
 import {
     createWorkspace,
     getMyWorkspaces,
-    getWorkspaceById
+    getWorkspaceById,
+    updateWorkspaceStatus // Assuming you still need this
+    // Add other necessary controller imports if missing
 } from '../controllers/workspace.controller.js';
-// This import now correctly matches the default export from board.routes.js
-import boardRoutes from './board.routes.js';
+import boardRoutes from './board.routes.js'; // Import board routes
+import { getMessagesByWorkspace } from '../controllers/message.controller.js';
 
 const router = express.Router();
 
-// Apply protect middleware to all workspace routes FIRST
-router.use(protect);
+// --- Define specific routes FIRST ---
 
-// Basic workspace routes
-router.route('/')
-    .post(createWorkspace)   // POST /api/workspaces
-    .get(getMyWorkspaces);    // GET /api/workspaces
+// GET /api/workspaces/my - Get user's specific workspaces
+router.get('/my', protect, getMyWorkspaces);
 
-router.route('/:id') // Changed :workspaceId to :id to match controller potentially
-    .get(getWorkspaceById); // GET /api/workspaces/:id
+// POST /api/workspaces - Create a new workspace
+router.post('/', protect, createWorkspace);
 
-// --- Nest Board Routes ---
-// Any request starting with /api/workspaces/:workspaceId/boards will be handled by boardRoutes
-// The :workspaceId will be available in boardRoutes controllers via req.params
-router.use('/:workspaceId/boards', boardRoutes); // Use :workspaceId here for nesting
+// --- Define parameterized routes AFTER specific ones ---
 
-// Ensure this is the last line and uses 'default'
+// GET /api/workspaces/:workspaceId - Get specific workspace details
+router.get('/:workspaceId', protect, getWorkspaceById);
+
+// PATCH /api/workspaces/:workspaceId/status - Update workspace status
+router.patch('/:workspaceId/status', protect, updateWorkspaceStatus);
+
+// GET /api/workspaces/:workspaceId/messages - Get messages for a specific workspace
+router.get('/:workspaceId/messages', protect, getMessagesByWorkspace);
+
+
+// --- Mount board routes (These are also under a parameter, so they are fine here) ---
+// Any route starting with /api/workspaces/:workspaceId/boards will use boardRoutes
+router.use('/:workspaceId/boards', boardRoutes);
+
+
 export default router;
 

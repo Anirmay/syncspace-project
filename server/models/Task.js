@@ -34,9 +34,19 @@
         },
         // We might add subtasks, due dates, labels etc. later
         comments: [CommentSchema],
+        startDate: { type: Date, default: null },
+        endDate: { type: Date, default: null }, // For completed tasks
+        status: { // Could be derived from column, but explicit status might be useful
+            type: String,
+            enum: ['todo', 'inprogress', 'done'],
+            default: 'todo',
+        },
       },
+      
       { timestamps: true }
     );
-
+    TaskSchema.pre('save', function(next) {
+      next();
+    });
     export default mongoose.model('Task', TaskSchema);
     

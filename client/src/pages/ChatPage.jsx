@@ -1,220 +1,280 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useContext, useEffect, useRef, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import axios from 'axios'; // We'll need this later
+import axios from 'axios';
+// TODO: Add Socket.IO client library import here
+// import io from 'socket.io-client';
 
 // --- SVG Icons ---
-const SendIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-      <path d="M3.105 3.105a.75.75 0 011.06-.002l14.49 11.25a.75.75 0 01-.001 1.318l-14.49 1.875a.75.75 0 01-.98-.676V3.105z" />
-    </svg>
-);
-const PlusIcon = () => (
-     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-    </svg>
-);
-const HashIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2 text-slate-500">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 8.25h13.5m-13.5 7.5h13.5m-1.5-15l-1.5 15m-6.75-15l-1.5 15" />
-    </svg>
-);
+const SendIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"> <path d="M3.105 3.105a.75.75 0 011.06-.002l14.49 11.25a.75.75 0 01-.001 1.318l-14.49 1.875a.75.75 0 01-.98-.676V3.105z" /> </svg> );
+const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"> <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /> </svg> );
+const UserIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2 text-slate-500"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>);
+const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-400"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg> );
+const CloseIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>);
 
-// --- Spinner Component Definition ---
+
+// --- Spinner Component ---
 const Spinner = () => (
     <div className="flex justify-center items-center py-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
     </div>
 );
-// --- END Spinner ---
 
-
-// Placeholder Message Component
+// --- Chat Message Component ---
 const ChatMessage = ({ message, isOwnMessage }) => {
-    // Basic styling differentiation for own vs other messages
     const alignment = isOwnMessage ? 'items-end' : 'items-start';
     const bubbleColor = isOwnMessage ? 'bg-indigo-600' : 'bg-slate-700';
     const textColor = 'text-white';
     const timeAlign = isOwnMessage ? 'text-right' : 'text-left';
+    const senderName = message.sender?.username || (isOwnMessage ? 'You' : 'User');
 
     return (
-        <div className={`flex flex-col mb-4 ${alignment}`}>
+        <div className={`flex flex-col mb-4 ${alignment} transition-opacity duration-300 ease-in-out`}> {/* Added transition */}
             <div className={`flex items-end max-w-lg ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                 {/* Placeholder Avatar */}
-                 <div className={`w-6 h-6 rounded-full flex-shrink-0 ${isOwnMessage ? 'ml-2' : 'mr-2'} ${isOwnMessage ? 'bg-blue-400' : 'bg-green-400'}`}></div>
-                 {/* Message Bubble */}
-                 <div className={`${bubbleColor} ${textColor} p-3 rounded-lg shadow`}>
+                 <div className={`w-6 h-6 rounded-full flex-shrink-0 ${isOwnMessage ? 'ml-2' : 'mr-2'} ${isOwnMessage ? 'bg-blue-400' : 'bg-green-400'} flex items-center justify-center text-xs font-bold ring-1 ring-slate-600`}>
+                    {senderName.charAt(0).toUpperCase()}
+                 </div>
+                 <div className={`${bubbleColor} ${textColor} p-3 rounded-lg shadow-md max-w-xs sm:max-w-md md:max-w-lg break-words`}> {/* Added shadow */}
+                    {!isOwnMessage && <p className="text-xs font-semibold mb-1 text-indigo-300">{senderName}</p>}
                     <p className="text-sm">{message.text}</p>
                  </div>
             </div>
-             {/* Timestamp */}
              <p className={`text-xs text-slate-500 mt-1 ${timeAlign} ${isOwnMessage ? 'mr-8' : 'ml-8'}`}>
-                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
+                 {new Date(message.createdAt || message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+             </p>
         </div>
     );
 };
 
 
 const ChatPage = () => {
-    const { currentUser } = useContext(AuthContext);
+    const { currentUser, logout } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [messageInput, setMessageInput] = useState('');
-    const [messages, setMessages] = useState([]); // Will hold fetched/real-time messages
-    const [workspaces, setWorkspaces] = useState([]); // Placeholder for workspace list
-    const [selectedWorkspace, setSelectedWorkspace] = useState(null); // Placeholder
-    const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
+    const [messages, setMessages] = useState([]); // Direct messages with selectedUser
+    const [users, setUsers] = useState([]); // Holds fetched user list
+    const [selectedUser, setSelectedUser] = useState(null); // Holds the selected User object
+    const [loadingUsers, setLoadingUsers] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
-    const messagesEndRef = useRef(null); // Ref to scroll to bottom
+    const [sendingMessage, setSendingMessage] = useState(false);
+    const [error, setError] = useState('');
+    const messagesEndRef = useRef(null);
+    const [userSearchQuery, setUserSearchQuery] = useState('');
 
-     // TODO: Fetch workspaces list using actual API call
+    // --- Fetch Users ---
     useEffect(() => {
-        // Simulating fetch - Replace with actual API call later
-        setLoadingWorkspaces(true);
-        // Assuming you have an endpoint like GET /api/workspaces
-        // You would use axios here with the user's token
-        setTimeout(() => {
-            // Replace with data from API
-            const fetchedWorkspaces = [
-                { _id: 'ws1', name: 'Project Alpha' },
-                { _id: 'ws2', name: 'Marketing Team' },
-                { _id: 'ws3', name: 'General' },
-            ];
-            setWorkspaces(fetchedWorkspaces);
-            // Select the first workspace only if the list is not empty
-            if (fetchedWorkspaces.length > 0) {
-                 setSelectedWorkspace(fetchedWorkspaces[0]._id);
+        const fetchUsers = async () => {
+            if (!currentUser || !currentUser.token) {
+                setError('Authentication required.');
+                setLoadingUsers(false);
+                return;
             }
-            setLoadingWorkspaces(false);
-        }, 500); // Simulate network delay
-    }, []); // Run once on mount
+            setLoadingUsers(true);
+            setError('');
+            try {
+                const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+                // NEW Backend Endpoint needed: GET /api/users (should exclude current user)
+                const response = await axios.get(`http://localhost:5000/api/users`, config);
+                // Filter out the current user from the list
+                setUsers(response.data.filter(user => user._id !== currentUser.user._id));
+            } catch (err) {
+                console.error("Fetch users error:", err);
+                setError(err.response?.data?.message || 'Failed to load users.');
+                 if (err.response?.status === 401 || err.response?.status === 403) {
+                     logout();
+                     navigate('/login');
+                 }
+            } finally {
+                setLoadingUsers(false);
+            }
+        };
+        fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser, logout, navigate]);
 
-     // TODO: Fetch messages when selectedWorkspace changes using actual API call
+    // --- Fetch Direct Messages when selectedUser changes ---
     useEffect(() => {
-        if (!selectedWorkspace) return; // Don't fetch if no workspace is selected
+        if (!selectedUser || !currentUser || !currentUser.token) {
+            setMessages([]);
+            return;
+        }
 
-        // Simulating fetch - Replace with actual API call later
-        setLoadingMessages(true);
-        setMessages([]); // Clear previous messages
-        // Assuming an endpoint like GET /api/workspaces/:workspaceId/messages
-        setTimeout(() => {
-             // Replace with data from API for the selectedWorkspace
-             const dummyMessages = [
-                { _id: 'm1', sender: 'user1', text: `Messages for ${workspaces.find(ws=>ws._id === selectedWorkspace)?.name || 'Unknown'} - 1`, timestamp: new Date(Date.now() - 5 * 60000), workspace: selectedWorkspace },
-                { _id: 'm2', sender: currentUser?.user?.id || 'me', text: `My message in ${workspaces.find(ws=>ws._id === selectedWorkspace)?.name || 'Unknown'}`, timestamp: new Date(Date.now() - 4 * 60000), workspace: selectedWorkspace },
-                { _id: 'm3', sender: 'user2', text: `Another message here.`, timestamp: new Date(Date.now() - 3 * 60000), workspace: selectedWorkspace },
-             ];
-            setMessages(dummyMessages);
-            setLoadingMessages(false);
-        }, 300); // Simulate network delay
-    // IMPORTANT: Add workspaces to dependency array if you use it inside setTimeout
-    }, [selectedWorkspace, currentUser, workspaces]);
+        const fetchMessages = async () => {
+            setLoadingMessages(true);
+            setError('');
+            try {
+                const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+                // NEW Backend Endpoint needed: GET /api/messages/direct/:userId
+                const response = await axios.get(`http://localhost:5000/api/messages/direct/${selectedUser._id}`, config);
+                setMessages(response.data);
+            } catch (err) {
+                console.error(`Fetch direct messages error for ${selectedUser.username}:`, err);
+                setError(err.response?.data?.message || `Failed to load messages with ${selectedUser.username}.`);
+                 if (err.response?.status === 401 || err.response?.status === 403) {
+                     logout();
+                     navigate('/login');
+                 }
+                 setMessages([]);
+            } finally {
+                setLoadingMessages(false);
+            }
+        };
 
-    // Scroll to bottom when new messages arrive
+        fetchMessages();
+        // TODO: Add Socket.IO setup here
+
+    }, [selectedUser, currentUser, logout, navigate]);
+
+    // Scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, loadingMessages]);
 
+    // Filter users based on search query
+    const filteredUsers = useMemo(() => {
+        return users.filter(user =>
+            user.username.toLowerCase().includes(userSearchQuery.toLowerCase())
+        );
+    }, [users, userSearchQuery]);
 
-    const handleSendMessage = (e) => {
+    // --- FIX handleSendMessage ---
+    const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!messageInput.trim() || !selectedWorkspace) return; // Check workspace selection
+        // Use selectedUser here
+        if (!messageInput.trim() || !selectedUser || sendingMessage) return; 
 
-        console.log(`Sending message to ${selectedWorkspace}:`, messageInput);
-        // TODO: Implement actual message sending via Socket.IO
+        setSendingMessage(true);
+        setError('');
 
-         // Example of adding message locally (remove when using Socket.IO)
-         const newMessage = {
-            _id: `temp_${Date.now()}`,
-            sender: currentUser?.user?.id || 'me',
+        const tempMessageId = `temp_${Date.now()}`;
+        const newMessageData = {
             text: messageInput,
-            timestamp: new Date(),
-            workspace: selectedWorkspace // Ensure this is set
-         };
-         setMessages(prevMessages => [...prevMessages, newMessage]); // Use functional update
+            sender: currentUser.user._id, 
+            receiver: selectedUser._id, // Use selectedUser._id
+            createdAt: new Date().toISOString()
+        };
 
-        setMessageInput(''); // Clear input
+        const optimisticMessage = {
+            ...newMessageData,
+             _id: tempMessageId,
+             sender: { _id: currentUser.user._id, username: currentUser.user.username }
+        };
+        setMessages(prevMessages => [...prevMessages, optimisticMessage]);
+        setMessageInput('');
+
+        try {
+            const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+            const response = await axios.post('http://localhost:5000/api/messages/direct', newMessageData, config);
+
+             setMessages(prevMessages => prevMessages.map(msg =>
+                 msg._id === tempMessageId ? response.data : msg
+             ));
+            // TODO: Replace above with Socket.IO emit for direct message
+
+        } catch (err) {
+            console.error("Send message error:", err);
+            setError(err.response?.data?.message || 'Failed to send message.');
+            setMessages(prevMessages => prevMessages.filter(msg => msg._id !== tempMessageId));
+        } finally {
+            setSendingMessage(false);
+        }
     };
+    // --- END FIX ---
 
     return (
-        // Main container - Full height, flex layout
-        <div className="flex h-screen bg-slate-900 text-white font-inter overflow-hidden">
+        <div className="flex flex-col md:flex-row h-screen bg-slate-900 text-white font-inter overflow-hidden">
 
             {/* --- Sidebar --- */}
-            <aside className="w-64 bg-slate-800 flex flex-col border-r border-slate-700">
-                {/* Sidebar Header */}
-                <header className="p-4 border-b border-slate-700 flex justify-between items-center flex-shrink-0"> {/* Added flex-shrink-0 */}
-                    <h2 className="font-semibold text-lg">Workspaces</h2>
+            <aside className="w-full md:w-64 bg-slate-800 flex flex-col border-r border-slate-700 flex-shrink-0"> {/* Added md width */}
+                <header className="p-4 border-b border-slate-700 flex justify-between items-center flex-shrink-0">
+                    <h2 className="font-semibold text-lg">Users</h2>
                     <button className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700"> <PlusIcon /> </button>
                 </header>
 
-                {/* Workspace/Channel List */}
+                <div className="p-3 border-b border-slate-700 flex-shrink-0">
+                    <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-2">
+                             <SearchIcon />
+                        </span>
+                        <input
+                            type="text"
+                            placeholder="Search users..."
+                            value={userSearchQuery}
+                            onChange={(e) => setUserSearchQuery(e.target.value)}
+                            className="w-full bg-slate-700 text-sm rounded-md py-2 pl-8 pr-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
+                        />
+                    </div>
+                </div>
+
                 <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-                    {loadingWorkspaces ? ( <p className="text-slate-400 text-sm p-2">Loading...</p> )
-                     : workspaces.length === 0 ? (<p className="text-slate-400 text-sm p-2">No workspaces found.</p>) // Handle empty case
-                     : (
-                        workspaces.map(ws => (
-                            <button
-                                key={ws._id}
-                                onClick={() => setSelectedWorkspace(ws._id)}
-                                className={`w-full flex items-center p-2 rounded-md text-left text-sm transition-colors ${selectedWorkspace === ws._id ? 'bg-indigo-600 text-white font-medium' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
-                            >
-                                <HashIcon />
-                                {ws.name}
-                            </button>
-                        ))
+                    {loadingUsers ? ( <Spinner/> )
+                      : error && !users.length ? (<p className="text-red-400 text-sm p-2">{error}</p>)
+                      : filteredUsers.length === 0 ? (<p className="text-slate-400 text-sm p-2">{userSearchQuery ? 'No users match search.' : 'No other users found.'}</p>)
+                      : (
+                         filteredUsers.map(user => (
+                             <button
+                                 key={user._id}
+                                 onClick={() => setSelectedUser(user)} 
+                                 className={`w-full flex items-center p-2 rounded-md text-left text-sm transition-colors duration-150 ease-in-out ${selectedUser?._id === user._id ? 'bg-indigo-600 text-white font-medium shadow-inner' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                             >
+                                 <UserIcon />
+                                 <span className="truncate">{user.username}</span>
+                             </button>
+                         ))
                     )}
                 </nav>
 
-                 {/* Sidebar Footer (User Info) */}
-                 <footer className="p-4 border-t border-slate-700 flex items-center space-x-3 flex-shrink-0"> {/* Added flex-shrink-0 */}
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
-                         {currentUser?.user?.username ? currentUser.user.username.charAt(0).toUpperCase() : '?'}
-                    </div>
-                    <span className="text-sm font-medium truncate">{currentUser?.user?.username || 'User'}</span>
+                 <footer className="p-4 border-t border-slate-700 flex items-center space-x-3 flex-shrink-0">
+                     <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold ring-1 ring-offset-2 ring-offset-slate-800 ring-indigo-400">
+                          {currentUser?.user?.username ? currentUser.user.username.charAt(0).toUpperCase() : '?'}
+                     </div>
+                     <span className="text-sm font-medium truncate">{currentUser?.user?.username || 'User'}</span>
                  </footer>
             </aside>
 
             {/* --- Main Chat Area --- */}
-            <main className="flex-1 flex flex-col overflow-hidden"> {/* Added overflow-hidden */}
-                {/* Chat Header */}
-                <header className="p-4 border-b border-slate-700 bg-slate-800/50 shadow-sm flex-shrink-0"> {/* Added flex-shrink-0 */}
-                    <h3 className="font-semibold text-lg">
-                        # {workspaces.find(ws => ws._id === selectedWorkspace)?.name || 'Select a Workspace'} {/* Updated default text */}
+            <main className="flex-1 flex flex-col overflow-hidden bg-slate-850"> 
+                <header className="p-4 border-b border-slate-700 bg-slate-800/80 shadow-sm flex-shrink-0 backdrop-blur-sm"> 
+                    <h3 className="font-semibold text-lg truncate">
+                         {selectedUser ? `Chat with ${selectedUser.username}` : (loadingUsers ? 'Loading...' : 'Select a User')}
                     </h3>
                 </header>
 
-                {/* Message Display Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"> 
                      {loadingMessages ? ( <Spinner /> )
-                     : !selectedWorkspace ? (<p className="text-slate-400 text-center">Please select a workspace to start chatting.</p>) // Handle no selection
-                     : messages.length === 0 ? (<p className="text-slate-400 text-center">No messages yet in this workspace.</p>) // Handle no messages
+                     : !selectedUser ? (<p className="text-slate-400 text-center pt-10">Please select a user to start chatting.</p>)
+                     : error && messages.length === 0 ? (<p className="text-red-400 text-center pt-10">{error}</p>) 
+                     : messages.length === 0 ? (<p className="text-slate-400 text-center pt-10">No messages yet with {selectedUser.username}. Send the first one!</p>)
                      : (
                          messages.map(msg => (
-                            <ChatMessage
-                                key={msg._id}
-                                message={msg}
-                                isOwnMessage={msg.sender === currentUser?.user?.id}
-                            />
+                             <ChatMessage
+                                 key={msg._id}
+                                 message={msg}
+                                 isOwnMessage={msg.sender?._id === currentUser?.user?._id || msg.sender === currentUser?.user?._id}
+                             />
                          ))
                      )}
-                     <div ref={messagesEndRef} />
+                     <div ref={messagesEndRef} /> 
                 </div>
 
-                {/* Message Input Area */}
-                <footer className="p-4 border-t border-slate-700 bg-slate-800/50 flex-shrink-0"> {/* Added flex-shrink-0 */}
+                <footer className="p-4 border-t border-slate-700 bg-slate-800/80 flex-shrink-0 backdrop-blur-sm"> 
+                    {error && !loadingMessages && messages.length > 0 && <p className="text-red-500 text-xs mb-2">{error}</p>} 
                     <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
                         <input
                             type="text"
                             value={messageInput}
                             onChange={(e) => setMessageInput(e.target.value)}
-                            placeholder={`Message #${workspaces.find(ws => ws._id === selectedWorkspace)?.name || '...'}`}
-                            className="flex-1 bg-slate-700 rounded-lg p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400 text-sm"
-                            disabled={!selectedWorkspace || loadingMessages} // Disable if loading or no workspace selected
+                            // --- FIX Placeholder ---
+                            placeholder={selectedUser ? `Message ${selectedUser.username}` : 'Select a user first'}
+                            className="flex-1 bg-slate-700 rounded-lg p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400 text-sm transition-colors duration-150" 
+                            // --- FIX Disabled check ---
+                            disabled={!selectedUser || loadingMessages || loadingUsers || sendingMessage} 
                         />
                         <button
                             type="submit"
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={!messageInput.trim() || !selectedWorkspace || loadingMessages}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-3 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150" 
+                            // --- FIX Disabled check ---
+                            disabled={!messageInput.trim() || !selectedUser || loadingMessages || loadingUsers || sendingMessage}
                             aria-label="Send message"
                         >
                             <SendIcon />
@@ -222,7 +282,6 @@ const ChatPage = () => {
                     </form>
                 </footer>
             </main>
-
         </div>
     );
 };

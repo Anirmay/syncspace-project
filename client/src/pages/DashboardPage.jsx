@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Link } from 'react-router-dom'; // For linking to workspace details later
+import { Link, useNavigate } from 'react-router-dom';
 
 // Simple Loading Spinner Component
 const Spinner = () => (
@@ -11,23 +11,32 @@ const Spinner = () => (
 );
 
 // Component to Display List of Workspaces
-const WorkspaceList = ({ workspaces, loading, error }) => {
-    if (loading) return <Spinner />;
-    if (error) return <p className="text-red-500 text-center">{error}</p>;
+const WorkspaceList = ({ title, workspaces, loading, error, onUpdateStatus }) => {
     if (workspaces.length === 0) {
-        return <p className="text-slate-400 text-center py-6">You haven't created or joined any workspaces yet.</p>;
+        return <p className="text-slate-400 text-sm italic px-6 pb-4">{`No ${title.toLowerCase()} yet.`}</p>;
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 px-6 pb-6">
             {workspaces.map((ws) => (
-                // TODO: Link to the actual workspace page later
-                <Link to={`/workspace/${ws._id}`} key={ws._id} className="block p-6 bg-slate-700 rounded-lg shadow hover:bg-slate-600 transition-colors border border-slate-600">
-                    <h3 className="text-xl font-semibold text-white">{ws.name}</h3>
-                    <p className="text-sm text-slate-400 mt-1">Owner: {ws.owner?.username || 'Unknown'}</p>
-                    <p className="text-xs text-slate-500 mt-2">Created: {new Date(ws.createdAt).toLocaleDateString()}</p>
-                    {/* Add member count or other details later */}
-                </Link>
+                <div key={ws._id} className="p-6 bg-slate-700 rounded-lg shadow hover:bg-slate-600 transition-colors border border-slate-600 flex justify-between items-center">
+                    <Link to={`/workspace/${ws._id}`} className="flex-grow mr-4 group"> {/* Added group */}
+                        <h3 className="text-xl font-semibold text-white group-hover:text-indigo-300 transition-colors">{ws.name}</h3> {/* Added hover effect */}
+                        <p className="text-sm text-slate-400 mt-1">Owner: {ws.owner?.username || 'Unknown'}</p>
+                        <p className="text-xs text-slate-500 mt-2">Created: {new Date(ws.createdAt).toLocaleDateString()}</p>
+                    </Link>
+                    <button
+                        onClick={() => onUpdateStatus(ws._id, ws.status === 'active' ? 'archived' : 'active')}
+                        className={`text-xs font-medium py-1 px-3 rounded ${
+                            ws.status === 'active'
+                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        } transition-colors`}
+                        title={ws.status === 'active' ? 'Mark as Done (Archive)' : 'Reactivate Project'}
+                    >
+                        {ws.status === 'active' ? 'Archive' : 'Reactivate'}
+                    </button>
+                </div>
             ))}
         </div>
     );
@@ -36,41 +45,24 @@ const WorkspaceList = ({ workspaces, loading, error }) => {
 // Component with Form to Create a New Workspace
 const CreateWorkspaceForm = ({ onWorkspaceCreated }) => {
     const [name, setName] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    // Removed unused loading/error state for this simplified form
     const { currentUser } = useContext(AuthContext);
+    const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (!name.trim()) {
-            setError('Workspace name cannot be empty.');
+            // Use a simple alert or a dedicated error state if needed
+            alert('Workspace name cannot be empty.'); 
             return;
         }
-        setLoading(true);
-        setError('');
-
-        try {
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${currentUser.token}`,
-                },
-            };
-            const response = await axios.post('http://localhost:5000/api/workspaces', { name }, config);
-            setName(''); // Clear input field
-            onWorkspaceCreated(response.data); // Notify parent component
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create workspace.');
-            console.error("Create workspace error:", err);
-        } finally {
-            setLoading(false);
-        }
+        // Navigate to a detail page, passing the name
+        navigate('/create-project-details', { state: { projectName: name } });
     };
 
     return (
         <form onSubmit={handleSubmit} className="p-6 bg-slate-700 rounded-lg shadow border border-slate-600 mb-8">
             <h3 className="text-lg font-semibold text-white mb-3">Create New Workspace</h3>
-            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
             <div className="flex flex-col sm:flex-row gap-3">
                 <input
                     type="text"
@@ -78,14 +70,13 @@ const CreateWorkspaceForm = ({ onWorkspaceCreated }) => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter workspace name"
                     required
-                    className="flex-grow bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
+                    className="flex-grow bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
                 />
                 <button
                     type="submit"
-                    disabled={loading}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {loading ? 'Creating...' : 'Create'}
+                    Next 
                 </button>
             </div>
         </form>
@@ -99,64 +90,123 @@ const DashboardPage = () => {
     const [workspaces, setWorkspaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const navigate = useNavigate(); // Added useNavigate
 
     // Function to fetch workspaces
     const fetchWorkspaces = async () => {
-        if (!currentUser || !currentUser.token) {
-            setError('Authentication error.');
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        setError('');
-        try {
-            const config = {
-                headers: { Authorization: `Bearer ${currentUser.token}` },
-            };
-            const response = await axios.get('http://localhost:5000/api/workspaces', config);
-            setWorkspaces(response.data);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to fetch workspaces.');
-            console.error("Fetch workspaces error:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+         if (!currentUser || !currentUser.token) { 
+             setError('Authentication error. Please log in.'); 
+             setLoading(false); 
+             // Optional: Redirect to login
+             // navigate('/login'); 
+             return; 
+         }
+         setLoading(true); 
+         setError('');
+         try {
+             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+             // --- FIX: Correct API endpoint ---
+             const response = await axios.get('http://localhost:5000/api/workspaces/my', config); 
+             // --- END FIX ---
+             setWorkspaces(response.data);
+         } catch (err) {
+             setError(err.response?.data?.message || 'Failed to fetch workspaces.'); 
+             console.error("Fetch workspaces error:", err);
+             // Handle auth errors specifically
+             if (err.response?.status === 401 || err.response?.status === 403) {
+                 logout(); // Log out user
+                 navigate('/login'); // Redirect to login
+             }
+         } finally { 
+             setLoading(false); 
+         }
+      };
 
     // Fetch workspaces on component mount
     useEffect(() => {
         fetchWorkspaces();
-    }, [currentUser]); // Re-fetch if user logs in/out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser]); // Re-fetch if user changes
 
-    // Callback function to add new workspace to the list without re-fetching all
-    const handleWorkspaceCreated = (newWorkspace) => {
-        setWorkspaces([newWorkspace, ...workspaces]); // Add to the beginning of the list
+    const handleWorkspaceCreated = () => {
+        // Refetch workspaces after creation (or after navigating back)
+        // This ensures the new workspace appears
+        fetchWorkspaces(); 
+     };
+
+    const handleUpdateStatus = async (workspaceId, newStatus) => {
+         setError(''); 
+         const originalWorkspaces = [...workspaces];
+         setWorkspaces(prev => prev.map(ws =>
+             ws._id === workspaceId ? { ...ws, status: newStatus } : ws
+         ));
+
+        try {
+            const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+            // Ensure the route matches your backend (using :workspaceId likely)
+            await axios.patch(`http://localhost:5000/api/workspaces/${workspaceId}/status`, { status: newStatus }, config);
+        } catch (err) {
+            setError(err.response?.data?.message || `Failed to update workspace status.`);
+            console.error("Update status error:", err);
+            setWorkspaces(originalWorkspaces); // Revert on error
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                logout();
+                navigate('/login');
+            }
+        }
     };
+
+    const activeWorkspaces = workspaces.filter(ws => ws.status === 'active');
+    const archivedWorkspaces = workspaces.filter(ws => ws.status === 'archived');
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
-            {/* Simple Header */}
-             <header className="mb-8 flex justify-between items-center">
-                 <h1 className="text-3xl font-bold text-white">Your Workspaces</h1>
-                 <div>
-                     <span className="mr-4 text-slate-300">Hi, {currentUser?.user?.username || 'User'}!</span>
-                     {/* Can add links to Profile/Settings here later */}
-                     <Link to="/profile" className="text-indigo-400 hover:underline mr-4">Profile</Link>
-                     <button
-                         onClick={logout}
-                         className="text-red-500 hover:underline"
-                     >
-                         Logout
-                     </button>
-                 </div>
-             </header>
+              <header className="mb-8 flex flex-wrap justify-between items-center gap-4"> {/* Added flex-wrap and gap */}
+                  <h1 className="text-3xl font-bold text-white">Your Workspaces</h1>
+                  <div className="flex items-center space-x-4"> {/* Grouped user info/actions */}
+                      <span className="text-slate-300">Hi, {currentUser?.user?.username || 'User'}!</span>
+                      <Link to="/profile" className="text-indigo-400 hover:underline">Profile</Link>
+                      <button onClick={logout} className="text-red-500 hover:underline">Logout</button>
+                  </div>
+              </header>
 
-            {/* Create Workspace Form */}
-            <CreateWorkspaceForm onWorkspaceCreated={handleWorkspaceCreated} />
+            <div className="mb-10 px-0 sm:px-6"> {/* Adjusted padding */}
+                <CreateWorkspaceForm onWorkspaceCreated={handleWorkspaceCreated} />
+                {/* Display general fetch error here */}
+                {error && <p className="text-red-500 text-center mt-4">{error}</p>} 
+            </div>
 
-            {/* List of Workspaces */}
-            <WorkspaceList workspaces={workspaces} loading={loading} error={error} />
 
+            {loading ? <Spinner/> : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                    <section>
+                        <h2 className="text-2xl font-semibold text-white mb-4 px-6 border-b border-slate-700 pb-2">
+                            Running Projects ({activeWorkspaces.length})
+                        </h2>
+                        <WorkspaceList
+                            title="Running Projects"
+                            workspaces={activeWorkspaces}
+                            loading={false} 
+                            error={null} 
+                            onUpdateStatus={handleUpdateStatus}
+                        />
+                    </section>
+
+                    <section>
+                        <h2 className="text-2xl font-semibold text-white mb-4 px-6 border-b border-slate-700 pb-2">
+                            Done Projects ({archivedWorkspaces.length})
+                        </h2>
+                         <WorkspaceList
+                            title="Done Projects"
+                            workspaces={archivedWorkspaces}
+                            loading={false}
+                            error={null}
+                            onUpdateStatus={handleUpdateStatus}
+                        />
+                    </section>
+                </div>
+            )}
         </div>
     );
 };

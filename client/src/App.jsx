@@ -12,6 +12,7 @@ import WorkspacePage from './pages/WorkspacePage';
 import ChatPage from './pages/ChatPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import CreateProjectDetailsPage from './pages/CreateProjectDetailsPage';
 
 // Simple component to protect routes
 // It checks if a user is logged in using AuthContext.
@@ -63,6 +64,7 @@ function App() {
             path="/chat"
             element={ <ProtectedRoute> <ChatPage /> </ProtectedRoute> }
         />
+        <Route path="/create-project-details" element={ <ProtectedRoute> <CreateProjectDetailsPage /> </ProtectedRoute> } />
         {/* --- END NEW --- */}
         {/* 404 Route */}
         <Route path="*" element={

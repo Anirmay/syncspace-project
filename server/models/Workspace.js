@@ -26,8 +26,14 @@
           required: true,
         },
         members: [MemberSchema],
+        status: {
+        type: String,
+        enum: ['active', 'archived'], // Possible statuses
+        default: 'active',           // New workspaces are active by default
+    },
         // We might add boards directly here later or keep them separate
         // boards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Board' }]
+        boards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Board' }]
       },
       { timestamps: true }
     );

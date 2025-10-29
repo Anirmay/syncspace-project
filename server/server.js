@@ -9,6 +9,7 @@ import workspaceRoutes from './routes/workspace.routes.js';
 // import boardRoutes from './routes/board.routes.js';
 import taskRoutes from './routes/task.routes.js';   // <-- NEW: Import task routes
 import contactRoutes from './routes/contact.routes.js';
+import messageRoutes from './routes/message.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/api/users', userRoutes);         // Handles /api/users/me, etc.
 app.use('/api/workspaces', workspaceRoutes); // Handles /api/workspaces/, /api/workspaces/:id, and nests board routes
 app.use('/api/tasks', taskRoutes);   
 app.use('/api/contact', contactRoutes);
+app.use('/api/messages', messageRoutes);
 
 // --- Database Connection ---
 const connectDB = async () => {
@@ -47,13 +49,6 @@ connectDB(); // Call the function to establish the database connection
 
 // --- Simple Root Route ---
 // A basic route to check if the API is running
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
-
-// --- Start Server ---
-// Start the Express server and listen on the specified port
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+app.get('/', (req, res) => { res.send('API is running...'); });
+app.listen(PORT, () => { console.log(`Server is running on http://localhost:${PORT}`); });
 

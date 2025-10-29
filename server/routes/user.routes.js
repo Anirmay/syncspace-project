@@ -1,28 +1,21 @@
-const express = require('express');
-const { protect } = require('../middleware/auth.middleware.js');
-const User = require('../models/User.js'); // We need the User model again
+import express from 'express';
+// --- UPDATED Import ---
+import { getUserProfile, deleteUserProfile, getAllUsers } from '../controllers/user.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// @route   GET /api/users/me
-// @desc    Get current logged in user's profile
-// @access  Private
-router.get('/me', protect, async (req, res) => {
-  // The 'protect' middleware already found the user and attached it to req.user
-  if (req.user) {
-    res.json({
-        id: req.user._id,
-        username: req.user.username,
-        email: req.user.email,
-        createdAt: req.user.createdAt // Optionally send creation date
-    });
-  } else {
-    // This case should ideally not happen if protect middleware works
-    res.status(404).json({ message: 'User not found after authentication' });
-  }
-});
+// --- NEW: Route to get all users ---
+// GET /api/users (handles fetching list for invites)
+router.get('/', protect, getAllUsers);
+// --- END NEW ---
 
-// Optional: Add a route for updating user profile later
-// router.patch('/me', protect, ...)
+// Routes for the current user profile (/api/users/me)
+router.route('/me')
+    .get(protect, getUserProfile)   // GET /api/users/me
+    .delete(protect, deleteUserProfile); // DELETE /api/users/me
 
-module.exports = router;
+// You could add routes for specific users later if needed, e.g., GET /api/users/:id
+
+export default router;
+

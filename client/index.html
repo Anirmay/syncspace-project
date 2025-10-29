@@ -3,14 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>SyncSpace Client</title>
+
+    <!-- TinyMCE Script - *** REPLACE 'YOUR_TINYMCE_API_KEY' *** -->
+    <script src="https://cdn.tiny.cloud/1/dczhaw49yryt06og1bijatd6zpx8lw2eu1dtnhckxh5j7wqh/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+
+    <!-- Firebase Libraries (v9+ Modular SDK from CDN) -->
+    <!-- IMPORTANT: Load these BEFORE your main application script -->
+    <script type="module">
+      // Make Firebase globally accessible via window.firebase
+      import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getFirestore, doc, onSnapshot, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+      window.firebase = {
+          app: { initializeApp, getApps: () => window.firebase?.app?.apps || [] },
+          auth: { getAuth, signInAnonymously, signInWithCustomToken },
+          firestore: { getFirestore, doc, onSnapshot, setDoc, serverTimestamp }
+      };
+      console.log("Firebase SDKs loaded and attached to window.firebase");
+
+      // Initialize Firebase App Early if config is available
+      try {
+        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        if (configStr.includes('apiKey') && configStr.includes('projectId')) {
+            const firebaseConfig = JSON.parse(configStr);
+            if (firebaseConfig.apiKey) {
+                const appName = `main-app-${Date.now()}`;
+                const app = initializeApp(firebaseConfig, appName);
+                if (!window.firebase.app.apps) {
+                    window.firebase.app.apps = [app];
+                } else if (!window.firebase.app.apps.some(a => a.name === appName)) {
+                    window.firebase.app.apps.push(app);
+                }
+                console.log("Firebase app initialized early in index.html");
+            } else { console.warn("Firebase config parsed but apiKey is missing."); }
+        } else { console.warn("__firebase_config is placeholder or invalid JSON."); }
+      } catch (e) { console.error("Error initializing Firebase early:", e); }
+    </script>
+
+    
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
   </head>
   <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
+    <!-- Your main application script (from Vite) -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- {/* --- Global Variable Placeholders (MUST BE SET CORRECTLY) --- */} -->
+    <script>
+      var __app_id = 'YOUR_APP_ID_PLACEHOLDER'; // Replace if needed, otherwise editor uses default
+      // *** IMPORTANT: Replace with your ACTUAL Firebase config JSON string ***
+      var __firebase_config = '{"apiKey":"AIzaSyAFR2H3WzH2H7OGxZFJ5mYV3YZJ7zDkiMg","authDomain":"syncspace-project.firebaseapp.com","projectId":"syncspace-project","storageBucket":"syncspace-project.firebasestorage.app","messagingSenderId":"350277282863","appId":"1:350277282863:web:17dbded7e6c7d8607baada","measurementId":"G-3EMY7H9W3B"}'; // Example - Replace with YOUR Firebase config string
+      var __initial_auth_token = undefined; // This will likely be set by the environment you run in
+    </script>
   </body>
 </html>
+

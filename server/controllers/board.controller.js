@@ -7,39 +7,47 @@ import mongoose from 'mongoose';
 // @access  Private (User must be a member of the workspace)
 const createBoard = async (req, res) => {
     const { title } = req.body;
-    const { workspaceId } = req.params;
+    const { workspaceId } = req.params; // From mergeParams
     const userId = req.user._id;
 
     if (!title) {
         return res.status(400).json({ message: 'Board title is required.' });
     }
     if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid Workspace ID format.' });
+        return res.status(400).json({ message: 'Invalid Workspace ID.' });
     }
 
     try {
-        // 1. Find the workspace to ensure it exists and user is a member
+        // 1. Check for workspace and authorization
         const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return res.status(404).json({ message: 'Workspace not found.' });
         }
-
-        // Authorization check: User must be a member
         const isMember = workspace.members.some(member => member.user.equals(userId));
         if (!isMember) {
-            return res.status(403).json({ message: 'Not authorized to create a board in this workspace.' });
+            return res.status(403).json({ message: 'Not authorized for this workspace.' });
         }
 
-        // 2. Create the new board
-        const board = new Board({
+        // 2. Create the new board WITH default columns
+        const newBoard = new Board({
             title,
             workspace: workspaceId,
-            // Default columns ('To Do', 'In Progress', 'Done') are added by pre-save hook
+            // --- THIS IS THE FIX ---
+            columns: [
+                { name: 'To Do', tasks: [] },
+                { name: 'In Progress', tasks: [] },
+                { name: 'Done', tasks: [] }
+            ]
         });
 
-        const createdBoard = await board.save();
+        const savedBoard = await newBoard.save();
 
-        res.status(201).json(createdBoard);
+        workspace.boards.push(savedBoard._id);
+        await workspace.save();
+
+        // 4. Return the complete board object (with columns)
+        // We send the board directly, just like your createTask controller
+        res.status(201).json(savedBoard);
     } catch (error) {
         console.error('Error creating board:', error);
         res.status(500).json({ message: 'Server error creating board.' });
@@ -54,36 +62,24 @@ const getBoardsByWorkspace = async (req, res) => {
     const { workspaceId } = req.params;
     const userId = req.user._id;
 
-     if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
-        return res.status(400).json({ message: 'Invalid Workspace ID format.' });
-    }
-
     try {
-        // 1. Find the workspace to ensure it exists and user is a member
-        const workspace = await Workspace.findById(workspaceId).select('members'); // Optimization
+        // Check for workspace and auth
+        const workspace = await Workspace.findById(workspaceId);
         if (!workspace) {
             return res.status(404).json({ message: 'Workspace not found.' });
         }
-
-        // Authorization check: User must be a member
         const isMember = workspace.members.some(member => member.user.equals(userId));
         if (!isMember) {
-            return res.status(403).json({ message: 'Not authorized to view boards in this workspace.' });
+            return res.status(403).json({ message: 'Not authorized for this workspace.' });
         }
 
-        // 2. Find boards belonging to this workspace
-        const boards = await Board.find({ workspace: workspaceId })
-                                  // Removed populate here, maybe fetch columns/tasks on board detail view?
-                                  // Or keep if Dashboard needs basic column info. Let's remove for now.
-                                  .sort({ createdAt: 1 }); // Oldest board first, or adjust as needed
-
+        // Find boards
+        const boards = await Board.find({ workspace: workspaceId });
         res.status(200).json(boards);
+
     } catch (error) {
         console.error('Error fetching boards:', error);
-        if (error.name === 'CastError') { // Handle cases where workspaceId format is valid but not found
-            return res.status(404).json({ message: 'Workspace not found or related data error.' });
-        }
-        res.status(500).json({ message: 'Server error fetching boards.' });
+        res.status(500).json({ message: 'Server error.' });
     }
 };
 

@@ -91,7 +91,7 @@ const ContactPage = () => {
                                 <input
                                     type="text" id="name" name="name" value={formData.name} onChange={handleChange} required
                                     className="w-full bg-slate-700 rounded p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
-                                    placeholder="John Doe"
+                                    placeholder="Anirmay Khan"
                                 />
                             </div>
                             <div>
@@ -115,6 +115,7 @@ const ContactPage = () => {
                                     {loading ? 'Sending...' : 'Send Message'}
                                 </button>
                             </div>
+                             {/* Status Message Display */}
                             {statusMessage && (
                                 <p className={`text-sm text-center font-medium ${isError ? 'text-red-400' : 'text-green-400'}`}>
                                     {statusMessage}
