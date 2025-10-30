@@ -75,6 +75,7 @@ const ChatBubbleIcon = () => (
     />
   </svg>
 );
+const MailIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 inline-block"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>);
 const HomePage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -128,7 +129,7 @@ const HomePage = () => {
                             {/* Logged In Links */}
                             <Link to="#" className={linkStyle} aria-disabled="true" style={{opacity: 0.5, cursor: 'not-allowed'}}>Upload Project</Link> {/* Placeholder */}
                             <Link to="/dashboard" className={linkStyle}>Workflow Board</Link>
-                            <Link to="/dashboard" className={linkStyle}>Create Project</Link>
+                            <Link to="/invitations" className={linkStyle}>Invitations</Link>
                             <Link to="/about" className={linkStyle}>About</Link>
                             <Link to="/contact" className={linkStyle}>Contact</Link>
                          </>
@@ -192,7 +193,7 @@ const HomePage = () => {
                  <>
                     <Link to="#" className={mobileLinkStyle} aria-disabled="true" style={{opacity: 0.5, cursor: 'not-allowed'}} onClick={toggleMobileMenu}>Upload Project</Link>
                     <Link to="/dashboard" className={mobileLinkStyle} onClick={toggleMobileMenu}>Workflow Board</Link>
-                    <Link to="/dashboard" className={mobileLinkStyle} onClick={toggleMobileMenu}>Create Project</Link>
+                    <Link to="/invitations" className={mobileLinkStyle} onClick={toggleMobileMenu}>Invitations</Link>
                     <Link to="/chat" className={mobileLinkStyle} onClick={toggleMobileMenu}>Chat</Link>
                     <Link to="/about" className={mobileLinkStyle} onClick={toggleMobileMenu}>About</Link>
                     <Link to="/contact" className={mobileLinkStyle} onClick={toggleMobileMenu}>Contact</Link>

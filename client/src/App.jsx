@@ -7,12 +7,16 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
-import DashboardPage from './pages/DashboardPage'; // Keep import for the /dashboard route
+import DashboardPage from './pages/DashboardPage';
 import WorkspacePage from './pages/WorkspacePage';
 import ChatPage from './pages/ChatPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import CreateProjectDetailsPage from './pages/CreateProjectDetailsPage';
+import InvitationsPage from './pages/InvitationsPage';
+// --- FIX: Import Manage Invites Page ---
+import ManageInvitesPage from './pages/ManageInvitesPage';
+import InvitationRespondPage from './pages/InvitationRespondPage';
 
 // Simple component to protect routes
 // It checks if a user is logged in using AuthContext.
@@ -65,6 +69,18 @@ function App() {
             element={ <ProtectedRoute> <ChatPage /> </ProtectedRoute> }
         />
         <Route path="/create-project-details" element={ <ProtectedRoute> <CreateProjectDetailsPage /> </ProtectedRoute> } />
+        <Route
+            path="/invitations"
+            element={ <ProtectedRoute> <InvitationsPage /> </ProtectedRoute> }
+        />
+    <Route
+      path="/invitations/respond/:inviteId"
+      element={<ProtectedRoute><InvitationRespondPage /></ProtectedRoute>}
+    />
+        <Route
+          path="/invitations/manage/:workspaceId"
+          element={<ProtectedRoute> <ManageInvitesPage /> </ProtectedRoute>}
+        />
         {/* --- END NEW --- */}
         {/* 404 Route */}
         <Route path="*" element={

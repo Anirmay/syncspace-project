@@ -10,6 +10,8 @@ import workspaceRoutes from './routes/workspace.routes.js';
 import taskRoutes from './routes/task.routes.js';   // <-- NEW: Import task routes
 import contactRoutes from './routes/contact.routes.js';
 import messageRoutes from './routes/message.routes.js';
+// --- NEW: Import invitation routes ---
+import invitationRoutes from './routes/invitation.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +34,7 @@ app.use('/api/workspaces', workspaceRoutes); // Handles /api/workspaces/, /api/w
 app.use('/api/tasks', taskRoutes);   
 app.use('/api/contact', contactRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/invitations', invitationRoutes);
 
 // --- Database Connection ---
 const connectDB = async () => {

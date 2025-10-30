@@ -161,6 +161,7 @@ const DashboardPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
+              <Link to="/" className="text-indigo-400 hover:underline mb-4 block">&larr; Back to Homepage</Link>
               <header className="mb-8 flex flex-wrap justify-between items-center gap-4"> {/* Added flex-wrap and gap */}
                   <h1 className="text-3xl font-bold text-white">Your Workspaces</h1>
                   <div className="flex items-center space-x-4"> {/* Grouped user info/actions */}

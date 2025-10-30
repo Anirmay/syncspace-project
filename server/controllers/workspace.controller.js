@@ -1,5 +1,8 @@
 import Workspace from '../models/Workspace.js';
 import User from '../models/User.js'; // Needed for email invites
+import Invitation from '../models/Invitation.js';
+import Board from '../models/Board.js'; // --- ADDED: Needed for cascade delete
+import Task from '../models/Task.js';   // --- ADDED: Needed for cascade delete
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer'; // Needed for email invites
 import dotenv from 'dotenv'; // Needed for email invites
@@ -26,15 +29,16 @@ const createWorkspace = async (req, res) => {
             // Owner is automatically added as admin member via pre-save hook
         });
 
-        // --- 2. Add Invited Members (if any) ---
+        // --- 2. Collect Invited Members (if any) ---
+        // Note: Do NOT add invited users directly to workspace.members here. We should
+        // create Invitation documents instead so users must accept before being added.
         const validMemberIds = [];
         if (membersToInvite && Array.isArray(membersToInvite) && membersToInvite.length > 0) {
             membersToInvite.forEach(id => {
-                if (mongoose.Types.ObjectId.isValid(id) && !workspace.members.some(m => m.user.equals(id))) {
-                    workspace.members.push({ user: id, role: 'Member' });
+                if (mongoose.Types.ObjectId.isValid(id) && !validMemberIds.includes(id)) {
                     validMemberIds.push(id);
                 } else {
-                    console.warn(`Invalid or duplicate member ID skipped: ${id}`);
+                    console.warn(`Invalid or duplicate invited ID skipped: ${id}`);
                 }
             });
         }
@@ -42,41 +46,58 @@ const createWorkspace = async (req, res) => {
         // --- 3. Save the Workspace ---
         const createdWorkspace = await workspace.save();
 
-        // --- 4. Send Invitation Emails (Asynchronous) ---
+        // --- 4. Create Invitation documents for invited users and send emails ---
         if (validMemberIds.length > 0) {
             const invitedUsers = await User.find({ '_id': { $in: validMemberIds } }).select('email username');
-
             if (invitedUsers.length > 0) {
                 const transporter = nodemailer.createTransport({
                     host: process.env.EMAIL_HOST,
                     port: parseInt(process.env.EMAIL_PORT || '465', 10),
-                    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+                    secure: process.env.EMAIL_SECURE === 'true',
                     auth: {
                         user: process.env.EMAIL_USER,
                         pass: process.env.EMAIL_PASS,
                     },
                 });
 
-                 const inviter = await User.findById(userId).select('username');
-                 const inviterName = inviter ? inviter.username : 'Someone';
+                const inviter = await User.findById(userId).select('username email');
+                const inviterName = inviter ? inviter.username : 'Someone';
 
-                invitedUsers.forEach(user => {
-                    const mailOptions = {
-                        from: `"SyncSpace Invites" <${process.env.EMAIL_USER}>`,
-                        to: user.email,
-                        subject: `You're invited to join the '${createdWorkspace.name}' workspace on SyncSpace!`,
-                        text: `Hi ${user.username},\n\n${inviterName} has invited you to collaborate in the workspace "${createdWorkspace.name}" on SyncSpace.\n\nJoin now by logging in or signing up!\n\nThanks,\nThe SyncSpace Team`,
-                        html: `<p>Hi ${user.username},</p><p><strong>${inviterName}</strong> has invited you to collaborate in the workspace "<strong>${createdWorkspace.name}</strong>" on SyncSpace.</p><p>Join now by logging in or signing up!</p><br><p>Thanks,</p><p>The SyncSpace Team</p>`,
-                    };
+                // Create invitations for each invited user (if not already pending)
+                for (const user of invitedUsers) {
+                    try {
+                        // Avoid duplicate pending invites
+                        const existing = await Invitation.findOne({ workspace: createdWorkspace._id, inviteeEmail: user.email.toLowerCase(), status: 'pending' });
+                        if (existing) continue;
 
-                    transporter.sendMail(mailOptions).then(info => {
-                        console.log(`Invitation email sent to ${user.email}. Message ID: ${info.messageId}`);
-                    }).catch(err => {
-                        console.error(`Error sending invitation email to ${user.email}:`, err);
-                    });
-                });
+                        const newInvite = new Invitation({
+                            workspace: createdWorkspace._id,
+                            inviter: userId,
+                            inviteeEmail: user.email.toLowerCase(),
+                            inviteeUser: user._id,
+                            status: 'pending'
+                        });
+                        await newInvite.save();
+
+                        // Send email (fire and forget)
+                        const mailOptions = {
+                            from: `"SyncSpace Invites" <${process.env.EMAIL_USER}>`,
+                            to: user.email,
+                            subject: `You're invited to join the '${createdWorkspace.name}' workspace on SyncSpace!`,
+                            text: `Hi ${user.username},\n\n${inviterName} has invited you to collaborate in the workspace "${createdWorkspace.name}" on SyncSpace.\n\nJoin now by logging in or signing up!\n\nThanks,\nThe SyncSpace Team`,
+                            html: `<p>Hi ${user.username},</p><p><strong>${inviterName}</strong> has invited you to collaborate in the workspace "<strong>${createdWorkspace.name}</strong>" on SyncSpace.</p><p>Join now by logging in or signing up!</p><br><p>Thanks,</p><p>The SyncSpace Team</p>`,
+                        };
+                        transporter.sendMail(mailOptions).then(info => {
+                            console.log(`Invitation email sent to ${user.email}. Message ID: ${info.messageId}`);
+                        }).catch(err => {
+                            console.error(`Error sending invitation email to ${user.email}:`, err);
+                        });
+                    } catch (invErr) {
+                        console.error('Error creating invitation for user', user._id, invErr);
+                    }
+                }
             } else {
-                 console.warn("Could not find user details for invited IDs:", validMemberIds);
+                console.warn("Could not find user details for invited IDs:", validMemberIds);
             }
         }
 
@@ -132,13 +153,17 @@ const getWorkspaceById = async (req, res) => {
             return res.status(404).json({ message: 'Workspace not found.' });
         }
 
-        // Authorization check: Ensure the requesting user is a member
-        const isMember = workspace.members.some(member => member.user._id.equals(req.user._id));
+        // Robust authorization check: ensure the requesting user is a member or the owner
+        const reqUserIdStr = req.user._id.toString();
+        const isMember = workspace.members.some(member => {
+            const mId = member.user?._id ? member.user._id.toString() : (member.user ? member.user.toString() : null);
+            return mId === reqUserIdStr;
+        });
         if (!isMember) {
-            // Check if owner is trying to access (should be included in members via pre-save hook)
-             if (!workspace.owner._id.equals(req.user._id)) {
+            const ownerIdStr = workspace.owner?._id ? workspace.owner._id.toString() : (workspace.owner ? workspace.owner.toString() : null);
+            if (ownerIdStr !== reqUserIdStr) {
                 return res.status(403).json({ message: 'Not authorized to access this workspace.' });
-             }
+            }
         }
 
         res.status(200).json(workspace);
@@ -181,7 +206,10 @@ const updateWorkspaceStatus = async (req, res) => {
         }
 
         // Authorization: Ensure user is a member (or maybe only owner/admin?)
-        const isMember = workspace.members.some(member => member.user.equals(userId));
+        const isMember = workspace.members.some(member => {
+            const mId = member.user?._id ? member.user._id.toString() : (member.user ? member.user.toString() : null);
+            return mId === userId.toString();
+        });
         if (!isMember) {
             return res.status(403).json({ message: 'Not authorized to modify this workspace.' });
         }
@@ -203,7 +231,197 @@ const updateWorkspaceStatus = async (req, res) => {
         res.status(500).json({ message: 'Server error updating workspace status.' });
     }
 };
+const getManagedWorkspaces = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Find workspaces where the user is the owner OR is a member with the 'Admin' role
+        const workspaces = await Workspace.find({
+            $or: [
+                { owner: userId },
+                { members: { $elemMatch: { user: userId, role: 'Admin' } } }
+            ]
+        })
+        .populate('owner', 'username') // Populate owner username
+        .sort({ createdAt: -1 });
+
+        res.status(200).json(workspaces);
+    } catch (error) {
+        console.error('Error fetching managed workspaces:', error);
+        res.status(500).json({ message: 'Server error fetching managed workspaces.' });
+    }
+};
+const deleteWorkspace = async (req, res) => {
+    const { workspaceId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid Workspace ID format.' });
+    }
+
+    try {
+        const workspace = await Workspace.findById(workspaceId);
+
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found.' });
+        }
+
+        // --- AUTHORIZATION: Only the owner can delete ---
+        if (!workspace.owner.equals(userId)) {
+            return res.status(403).json({ message: 'Not authorized. Only the workspace owner can delete.' });
+        }
+
+        // --- CASCADE DELETE ---
+
+        // 1. Find all boards in this workspace
+        const boards = await Board.find({ workspace: workspaceId });
+        const boardIds = boards.map(board => board._id);
+
+        // 2. Delete all tasks associated with those boards
+        if (boardIds.length > 0) {
+            await Task.deleteMany({ board: { $in: boardIds } });
+            console.log(`Deleted tasks for ${boardIds.length} boards.`);
+        }
+
+        // 3. Delete all boards in this workspace
+        await Board.deleteMany({ workspace: workspaceId });
+        console.log(`Deleted ${boardIds.length} boards.`);
+
+        // 4. Delete the workspace itself
+        await Workspace.findByIdAndDelete(workspaceId);
+
+        res.status(200).json({ message: 'Workspace and all associated boards/tasks deleted successfully.' });
+
+    } catch (error) {
+        console.error('Error deleting workspace:', error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid Workspace ID format.' });
+        }
+        res.status(500).json({ message: 'Server error deleting workspace.' });
+    }
+};
+// --- END NEW FUNCTION ---
+
+// --- NEW FUNCTION ---
+// @desc    Get members of a specific workspace
+// @route   GET /api/workspaces/:workspaceId/members
+// @access  Private (User must be member)
+const getWorkspaceMembers = async (req, res) => {
+    const { workspaceId } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
+        return res.status(400).json({ message: 'Invalid Workspace ID format.' });
+    }
+
+    try {
+        const workspace = await Workspace.findById(workspaceId)
+                                     .populate('members.user', 'username email _id'); // Populate member details
+
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found.' });
+        }
+
+        // Authorization check: Ensure the requesting user is a member
+        const isMember = workspace.members.some(member => member.user._id.equals(userId));
+         if (!isMember && !workspace.owner.equals(userId)) { // Allow owner even if not explicitly in members list (should be though)
+             return res.status(403).json({ message: 'Not authorized to access this workspace members.' });
+         }
+
+        res.status(200).json(workspace.members); // Return only the members array
+
+    } catch (error) {
+        console.error('Error fetching workspace members:', error);
+         if (error.name === 'CastError') {
+             return res.status(400).json({ message: 'Invalid Workspace ID format.' });
+         }
+        res.status(500).json({ message: 'Server error fetching members.' });
+    }
+};
+// --- END NEW FUNCTION ---
+
+const removeMemberFromWorkspace = async (req, res) => {
+    const { workspaceId, memberUserId } = req.params;
+    const currentUserId = req.user._id; // The user making the request
+
+    if (!mongoose.Types.ObjectId.isValid(workspaceId) || !mongoose.Types.ObjectId.isValid(memberUserId)) {
+        return res.status(400).json({ message: 'Invalid Workspace or User ID format.' });
+    }
+
+    try {
+        const workspace = await Workspace.findById(workspaceId);
+
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found.' });
+        }
+
+        // --- AUTHORIZATION: Allow owner or Admin members to remove non-owner members ---
+        const ownerIdStr = workspace.owner?._id ? workspace.owner._id.toString() : (workspace.owner ? workspace.owner.toString() : null);
+        const isOwner = ownerIdStr === currentUserId.toString();
+        const isAdminMember = workspace.members.some(m => {
+            const memberUserId = m.user?._id ? m.user._id.toString() : (m.user ? m.user.toString() : null);
+            return memberUserId === currentUserId.toString() && m.role === 'Admin';
+        });
+        if (!isOwner && !isAdminMember) {
+            return res.status(403).json({ message: 'Not authorized. Only the workspace owner or an Admin may remove members.' });
+        }
+        
+        // --- LOGIC: Prevent owner from removing themselves ---
+        const ownerIsMember = (workspace.owner?._id ? workspace.owner._id.toString() : (workspace.owner ? workspace.owner.toString() : null)) === memberUserId.toString();
+        if (ownerIsMember) {
+            return res.status(400).json({ message: 'Cannot remove the workspace owner.' });
+        }
+
+        // Check if the user is actually a member
+        const memberIndex = workspace.members.findIndex(member => {
+            const mId = member.user?._id ? member.user._id.toString() : (member.user ? member.user.toString() : null);
+            return mId === memberUserId.toString();
+        });
+
+        if (memberIndex === -1) {
+            return res.status(404).json({ message: 'Member not found in this workspace.' });
+        }
+
+        // Remove the member from the array
+        workspace.members.splice(memberIndex, 1);
+        
+        await workspace.save();
+
+        // Also remove any existing invitations for this user to keep Invitation Status consistent
+        try {
+            const userRecord = await User.findById(memberUserId).select('email');
+            const email = userRecord?.email?.toLowerCase() || null;
+            const deleteQuery = {
+                workspace: workspaceId,
+                $or: []
+            };
+            if (memberUserId) deleteQuery.$or.push({ inviteeUser: memberUserId });
+            if (email) deleteQuery.$or.push({ inviteeEmail: email });
+            if (deleteQuery.$or.length > 0) {
+                await Invitation.deleteMany(deleteQuery);
+            }
+        } catch (invDelErr) {
+            console.error('Error deleting related invitations after member removal:', invDelErr);
+        }
+
+        res.status(200).json({ message: 'Member removed successfully.' });
+
+    } catch (error) {
+        console.error('Error removing member:', error);
+        res.status(500).json({ message: 'Server error removing member.' });
+    }
+};
+
 
 
 // Update exports
-export { createWorkspace, getMyWorkspaces, getWorkspaceById, updateWorkspaceStatus };
+export {
+    createWorkspace,
+    getMyWorkspaces,
+    getWorkspaceById,
+    updateWorkspaceStatus,
+    deleteWorkspace, // --- ADDED: Export the new function
+    getManagedWorkspaces,
+    getWorkspaceMembers,
+    removeMemberFromWorkspace
+};

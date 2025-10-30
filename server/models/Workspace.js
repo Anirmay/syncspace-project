@@ -20,6 +20,11 @@
           required: true,
           trim: true,
         },
+        description: {
+          type: String,
+          trim: true,
+          default: ''
+        },
         owner: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User',

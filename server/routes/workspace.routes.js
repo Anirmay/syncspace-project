@@ -4,8 +4,11 @@ import {
     createWorkspace,
     getMyWorkspaces,
     getWorkspaceById,
-    updateWorkspaceStatus // Assuming you still need this
-    // Add other necessary controller imports if missing
+    updateWorkspaceStatus,
+    deleteWorkspace, // --- ADDED: Import the new delete function
+    getManagedWorkspaces,
+    getWorkspaceMembers,
+    removeMemberFromWorkspace
 } from '../controllers/workspace.controller.js';
 import boardRoutes from './board.routes.js'; // Import board routes
 import { getMessagesByWorkspace } from '../controllers/message.controller.js';
@@ -13,29 +16,23 @@ import { getMessagesByWorkspace } from '../controllers/message.controller.js';
 const router = express.Router();
 
 // --- Define specific routes FIRST ---
-
-// GET /api/workspaces/my - Get user's specific workspaces
 router.get('/my', protect, getMyWorkspaces);
-
-// POST /api/workspaces - Create a new workspace
+router.get('/managed', protect, getManagedWorkspaces);
 router.post('/', protect, createWorkspace);
 
 // --- Define parameterized routes AFTER specific ones ---
-
-// GET /api/workspaces/:workspaceId - Get specific workspace details
 router.get('/:workspaceId', protect, getWorkspaceById);
-
-// PATCH /api/workspaces/:workspaceId/status - Update workspace status
 router.patch('/:workspaceId/status', protect, updateWorkspaceStatus);
-
-// GET /api/workspaces/:workspaceId/messages - Get messages for a specific workspace
+router.delete('/:workspaceId', protect, deleteWorkspace);
 router.get('/:workspaceId/messages', protect, getMessagesByWorkspace);
+router.get('/:workspaceId/members', protect, getWorkspaceMembers);
 
+// --- NEW ROUTE for removing a member ---
+router.delete('/:workspaceId/members/:memberUserId', protect, removeMemberFromWorkspace);
+// --- END NEW ROUTE ---
 
-// --- Mount board routes (These are also under a parameter, so they are fine here) ---
-// Any route starting with /api/workspaces/:workspaceId/boards will use boardRoutes
+// --- Mount board routes ---
 router.use('/:workspaceId/boards', boardRoutes);
 
 
 export default router;
-
