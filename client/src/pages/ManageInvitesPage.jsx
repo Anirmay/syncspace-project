@@ -32,6 +32,10 @@ const ManageInvitesPage = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [actionLoading, setActionLoading] = useState({});
+    // Remove member modal state
+    const [showRemoveModal, setShowRemoveModal] = useState(false);
+    const [removeTarget, setRemoveTarget] = useState(null); // { memberUserId, username }
+    const [isRemoving, setIsRemoving] = useState(false);
 
     // --- Fetch Data from API ---
     useEffect(() => {
@@ -86,13 +90,27 @@ const ManageInvitesPage = () => {
     };
 
     // --- Handle Removing Member ---
-    const handleRemoveMember = async (memberUserId, username) => {
-        if (!window.confirm(`Are you sure you want to remove ${username}? This cannot be undone.`)) return;
+    // Open the remove confirmation modal (replaces window.confirm usage)
+    const handleRemoveMember = (memberUserId, username) => {
+        setRemoveTarget({ memberUserId, username });
+        setShowRemoveModal(true);
+    };
+
+    // Cancel remove
+    const handleCancelRemove = () => {
+        setRemoveTarget(null);
+        setShowRemoveModal(false);
+    };
+
+    // Confirm removal (actual async operation)
+    const handleConfirmRemove = async () => {
+        if (!removeTarget) return;
+        const { memberUserId, username } = removeTarget;
         const actionKey = `remove_${memberUserId}`;
+        setIsRemoving(true);
         setActionLoading(prev => ({ ...prev, [actionKey]: true }));
         setError('');
-        // Debug: log the action start
-        console.log('handleRemoveMember: start', { memberUserId, username, membersLength: members.length });
+        console.log('handleConfirmRemove: start', { memberUserId, username, membersLength: members.length });
         try {
             const config = { headers: { Authorization: `Bearer ${currentUserToken}` } };
             // Remove member on server
@@ -113,16 +131,14 @@ const ManageInvitesPage = () => {
             }));
 
             // NOTE: Do not automatically create a new invitation when removing a member.
-            // Previously we optimistically created a local pending-invite and then attempted
-            // to POST an invitation to the server. That caused duplicate/incorrect states
-            // and an unwanted join request being sent automatically. Now we only update
-            // the members state locally. The removed user will appear in the "suggested"
-            // users list (Invitation Status -> Invite button) because we fetch all users
-            // and compute nonMemberUsers from `allUsers`.
         } catch (err) {
              console.error("Remove member error:", err);
+             setError(err.response?.data?.message || 'Failed to remove member.');
         } finally {
              setActionLoading(prev => ({ ...prev, [actionKey]: false }));
+             setIsRemoving(false);
+             setShowRemoveModal(false);
+             setRemoveTarget(null);
         }
     };
 
@@ -142,12 +158,12 @@ const ManageInvitesPage = () => {
                 // Fallback: mark pending
                 setInvitations(prev => prev.map(inv => inv._id === inviteId ? ({ ...inv, status: 'pending' }) : inv));
             }
-            alert(res.data?.message || `Invitation resent to ${email}`);
+            // NOTE: removed browser alert for better UX. Success state is reflected by updated invitation status above.
         } catch (err) {
             console.error("Resend invite error:", err);
             const errorMsg = err.response?.data?.message || 'Failed to resend invitation.';
             setError(errorMsg);
-            alert(`Error: ${errorMsg}`);
+            // NOTE: removed browser alert for errors; error is shown inline via setError
         } finally {
              setActionLoading(prev => ({ ...prev, [actionKey]: false }));
         }
@@ -259,6 +275,22 @@ const ManageInvitesPage = () => {
                 <Link to="/invitations" className="text-indigo-400 hover:underline mb-2 block">&larr; Back to Invitations</Link>
                 <h1 className="text-3xl font-bold text-white">Manage Invites: {workspace?.name || 'Loading...'}</h1>
             </header>
+
+            {/* Remove member confirmation modal */}
+            {showRemoveModal && removeTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-slate-800 rounded-lg shadow-lg max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold text-red-400">Confirm member removal</h3>
+                        <p className="mt-4 text-sm text-slate-300">Are you sure you want to remove <strong className="text-white">{removeTarget.username}</strong> from this workspace? This action cannot be undone.</p>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button onClick={handleCancelRemove} disabled={isRemoving} className="px-4 py-2 bg-slate-600 text-white rounded">Cancel</button>
+                            <button onClick={handleConfirmRemove} disabled={isRemoving} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded">
+                                {isRemoving ? 'Removing...' : 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {error && <p className="text-red-500 text-center py-4 bg-red-900/30 rounded-md mb-6">{error}</p>}
 

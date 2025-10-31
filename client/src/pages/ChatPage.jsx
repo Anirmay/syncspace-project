@@ -7,7 +7,6 @@ import axios from 'axios';
 
 // --- SVG Icons ---
 const SendIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"> <path d="M3.105 3.105a.75.75 0 011.06-.002l14.49 11.25a.75.75 0 01-.001 1.318l-14.49 1.875a.75.75 0 01-.98-.676V3.105z" /> </svg> );
-const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"> <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /> </svg> );
 const UserIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2 text-slate-500"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>);
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-400"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg> );
 const CloseIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>);
@@ -16,30 +15,40 @@ const CloseIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" vi
 // --- Spinner Component ---
 const Spinner = () => (
     <div className="flex justify-center items-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
     </div>
 );
 
 // --- Chat Message Component ---
-const ChatMessage = ({ message, isOwnMessage }) => {
+const ChatMessage = ({ message, currentUser }) => {
+    // Determine sender id/username in flexible ways (populated object or raw id/string)
+    const sender = message.sender;
+    const senderId = sender?._id ?? sender;
+    const senderUsername = sender?.username ?? (typeof sender === 'string' ? sender : undefined);
+    const currentId = currentUser?._id ?? currentUser?._id;
+    const currentUsername = currentUser?.username;
+
+    const isOwnMessage = (
+        (senderId && currentId && String(senderId) === String(currentId)) ||
+        (senderUsername && currentUsername && String(senderUsername) === String(currentUsername))
+    );
     const alignment = isOwnMessage ? 'items-end' : 'items-start';
-    const bubbleColor = isOwnMessage ? 'bg-indigo-600' : 'bg-slate-700';
-    const textColor = 'text-white';
+    const bubbleClasses = isOwnMessage ? 'bg-teal-600 text-white' : 'bg-white text-slate-900 dark:bg-slate-700 dark:text-white ring-1 ring-slate-200 dark:ring-slate-600';
     const timeAlign = isOwnMessage ? 'text-right' : 'text-left';
-    const senderName = message.sender?.username || (isOwnMessage ? 'You' : 'User');
+    const senderName = senderUsername || (isOwnMessage ? (currentUsername || 'You') : 'User');
 
     return (
-        <div className={`flex flex-col mb-4 ${alignment} transition-opacity duration-300 ease-in-out`}> {/* Added transition */}
-            <div className={`flex items-end max-w-lg ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                 <div className={`w-6 h-6 rounded-full flex-shrink-0 ${isOwnMessage ? 'ml-2' : 'mr-2'} ${isOwnMessage ? 'bg-blue-400' : 'bg-green-400'} flex items-center justify-center text-xs font-bold ring-1 ring-slate-600`}>
+        <div className={`w-full flex flex-col mb-4 ${alignment} transition-opacity duration-300 ease-in-out`}> {/* Added transition */}
+            <div className={`flex items-end max-w-lg ${isOwnMessage ? 'ml-auto flex-row-reverse' : ''}`}>
+                 <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isOwnMessage ? 'ml-2' : 'mr-2'} ${isOwnMessage ? 'bg-teal-500 text-white' : 'bg-slate-300 text-slate-700 dark:bg-slate-600 dark:text-white'} flex items-center justify-center text-xs font-bold ring-1 ring-slate-200 dark:ring-slate-600`}>
                     {senderName.charAt(0).toUpperCase()}
                  </div>
-                 <div className={`${bubbleColor} ${textColor} p-3 rounded-lg shadow-md max-w-xs sm:max-w-md md:max-w-lg break-words`}> {/* Added shadow */}
-                    {!isOwnMessage && <p className="text-xs font-semibold mb-1 text-indigo-300">{senderName}</p>}
+                 <div className={`${bubbleClasses} p-3 rounded-lg shadow-md max-w-xs sm:max-w-md md:max-w-lg break-words`}> {/* Added shadow */}
+                    {!isOwnMessage && <p className="text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{senderName}</p>}
                     <p className="text-sm">{message.text}</p>
                  </div>
             </div>
-             <p className={`text-xs text-slate-500 mt-1 ${timeAlign} ${isOwnMessage ? 'mr-8' : 'ml-8'}`}>
+             <p className={`text-xs text-slate-400 dark:text-slate-300 mt-1 ${timeAlign} ${isOwnMessage ? 'mr-8' : 'ml-8'}`}>
                  {new Date(message.createdAt || message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
              </p>
         </div>
@@ -182,13 +191,12 @@ const ChatPage = () => {
     // --- END FIX ---
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-slate-900 text-white font-inter overflow-hidden">
+        <div className="flex flex-col md:flex-row h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-white font-inter overflow-hidden">
 
             {/* --- Sidebar --- */}
-            <aside className="w-full md:w-64 bg-slate-800 flex flex-col border-r border-slate-700 flex-shrink-0"> {/* Added md width */}
+            <aside className="w-full md:w-56 bg-slate-800 flex flex-col border-r border-slate-700 flex-shrink-0"> {/* Slightly narrower sidebar for chat layout */}
                 <header className="p-4 border-b border-slate-700 flex justify-between items-center flex-shrink-0">
                     <h2 className="font-semibold text-lg">Users</h2>
-                    <button className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700"> <PlusIcon /> </button>
                 </header>
 
                 <div className="p-3 border-b border-slate-700 flex-shrink-0">
@@ -201,7 +209,7 @@ const ChatPage = () => {
                             placeholder="Search users..."
                             value={userSearchQuery}
                             onChange={(e) => setUserSearchQuery(e.target.value)}
-                            className="w-full bg-slate-700 text-sm rounded-md py-2 pl-8 pr-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
+                            className="w-full bg-slate-700 text-sm rounded-md py-2 pl-8 pr-3 border border-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none text-white placeholder-slate-400"
                         />
                     </div>
                 </div>
@@ -215,7 +223,7 @@ const ChatPage = () => {
                              <button
                                  key={user._id}
                                  onClick={() => setSelectedUser(user)} 
-                                 className={`w-full flex items-center p-2 rounded-md text-left text-sm transition-colors duration-150 ease-in-out ${selectedUser?._id === user._id ? 'bg-indigo-600 text-white font-medium shadow-inner' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
+                           className={`w-full flex items-center p-2 rounded-md text-left text-sm transition-colors duration-150 ease-in-out ${selectedUser?._id === user._id ? 'bg-teal-600 text-white font-medium shadow-inner' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}`}
                              >
                                  <UserIcon />
                                  <span className="truncate">{user.username}</span>
@@ -225,7 +233,7 @@ const ChatPage = () => {
                 </nav>
 
                  <footer className="p-4 border-t border-slate-700 flex items-center space-x-3 flex-shrink-0">
-                     <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold ring-1 ring-offset-2 ring-offset-slate-800 ring-indigo-400">
+                 <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-sm font-bold ring-1 ring-offset-2 ring-offset-slate-800 ring-teal-400">
                           {currentUser?.user?.username ? currentUser.user.username.charAt(0).toUpperCase() : '?'}
                      </div>
                      <span className="text-sm font-medium truncate">{currentUser?.user?.username || 'User'}</span>
@@ -234,10 +242,10 @@ const ChatPage = () => {
 
             {/* --- Main Chat Area --- */}
             <main className="flex-1 flex flex-col overflow-hidden bg-slate-850"> 
-                <header className="p-4 border-b border-slate-700 bg-slate-800/80 shadow-sm flex-shrink-0 backdrop-blur-sm"> 
-                    <h3 className="font-semibold text-lg truncate">
-                         {selectedUser ? `Chat with ${selectedUser.username}` : (loadingUsers ? 'Loading...' : 'Select a User')}
-                    </h3>
+                <header className="p-4 border-b border-slate-300 bg-slate-200 shadow-sm flex-shrink-0 backdrop-blur-sm dark:bg-slate-800/80 dark:border-slate-700 dark:text-white"> 
+                <h3 className="font-semibold text-lg truncate text-slate-700 dark:text-white">
+                    {selectedUser ? selectedUser.username : (loadingUsers ? 'Loading...' : 'Select a User')}
+                </h3>
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"> 
@@ -250,14 +258,14 @@ const ChatPage = () => {
                              <ChatMessage
                                  key={msg._id}
                                  message={msg}
-                                 isOwnMessage={msg.sender?._id === currentUser?.user?._id || msg.sender === currentUser?.user?._id}
+                                 currentUser={currentUser?.user}
                              />
                          ))
                      )}
                      <div ref={messagesEndRef} /> 
                 </div>
 
-                <footer className="p-4 border-t border-slate-700 bg-slate-800/80 flex-shrink-0 backdrop-blur-sm"> 
+                <footer className="p-4 border-t border-slate-200 bg-slate-100 flex-shrink-0 backdrop-blur-sm dark:bg-slate-800/80 dark:border-slate-700 dark:text-white"> 
                     {error && !loadingMessages && messages.length > 0 && <p className="text-red-500 text-xs mb-2">{error}</p>} 
                     <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
                         <input
@@ -266,13 +274,13 @@ const ChatPage = () => {
                             onChange={(e) => setMessageInput(e.target.value)}
                             // --- FIX Placeholder ---
                             placeholder={selectedUser ? `Message ${selectedUser.username}` : 'Select a user first'}
-                            className="flex-1 bg-slate-700 rounded-lg p-3 border border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400 text-sm transition-colors duration-150" 
+                            className="flex-1 bg-white dark:bg-slate-700 rounded-lg p-3 border border-slate-200 dark:border-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 text-sm transition-colors duration-150" 
                             // --- FIX Disabled check ---
                             disabled={!selectedUser || loadingMessages || loadingUsers || sendingMessage} 
                         />
                         <button
                             type="submit"
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-3 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150" 
+                            className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg p-3 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150" 
                             // --- FIX Disabled check ---
                             disabled={!messageInput.trim() || !selectedUser || loadingMessages || loadingUsers || sendingMessage}
                             aria-label="Send message"

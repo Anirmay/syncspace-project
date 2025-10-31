@@ -4,6 +4,7 @@ import User from '../models/User.js'; // Need to find user by email
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer'; // For sending emails
 import dotenv from 'dotenv';
+import Notification from '../models/Notification.js';
 
 dotenv.config();
 
@@ -154,19 +155,45 @@ const sendInvitation = async (req, res) => {
         });
         await newInvite.save();
         
-        // 5. Send email (fire and forget)
-        const transporter = setupTransporter();
         const inviterName = req.user.username || workspace.owner.username;
-        const mailOptions = {
-            from: `"SyncSpace Invites" <${process.env.EMAIL_USER}>`,
-            to: inviteeEmail,
-            subject: `You're invited to join the '${workspace.name}' workspace!`,
-            html: `<p>Hi,</p><p><strong>${inviterName}</strong> has invited you to collaborate in the workspace "<strong>${workspace.name}</strong>".</p><p>Please log in or sign up on SyncSpace with this email to accept the invitation.</p><p>Thanks,<br>The SyncSpace Team</p>`
-        };
-        
-        transporter.sendMail(mailOptions).catch(err => {
-             console.error(`Error sending email to ${inviteeEmail}:`, err); // Log error but don't fail request
-        });
+        // Only send email if invitee is not a registered user OR if they have email notifications enabled
+        if (!invitee || (invitee && invitee.emailNotifications !== false)) {
+            const transporter = setupTransporter();
+            const mailOptions = {
+                from: `"SyncSpace Invites" <${process.env.EMAIL_USER}>`,
+                to: inviteeEmail,
+                subject: `You're invited to join the '${workspace.name}' workspace!`,
+                html: `<p>Hi,</p><p><strong>${inviterName}</strong> has invited you to collaborate in the workspace "<strong>${workspace.name}</strong>".</p><p>Please log in or sign up on SyncSpace with this email to accept the invitation.</p><p>Thanks,<br>The SyncSpace Team</p>`
+            };
+            transporter.sendMail(mailOptions).catch(err => {
+                console.error(`Error sending email to ${inviteeEmail}:`, err); // Log error but don't fail request
+            });
+        } else {
+            console.log(`Skipping invite email to ${inviteeEmail} because user opted out of email notifications.`);
+        }
+
+        // Create in-app notification for the invitee (registered or not) -- use inviteeEmail so an unregistered user still has a record
+        try {
+            // Only create an in-app notification if invitee is not registered (we still store inviteeEmail)
+            // OR if they are registered and have webNotifications enabled.
+            const shouldCreate = !invitee || (invitee && invitee.webNotifications !== false);
+            if (shouldCreate) {
+                const notificationPayload = {
+                    actor: inviterId,
+                    type: 'invite_sent',
+                    message: `${req.user.username || 'Someone'} invited you to "${workspace.name}".`,
+                    link: `/invitations/respond/${newInvite._id}`
+                };
+                if (invitee && invitee._id) notificationPayload.user = invitee._id;
+                notificationPayload.inviteeEmail = inviteeEmail.toLowerCase();
+                const createdNotif = await Notification.create(notificationPayload);
+                console.log('Notification created (invite_sent):', { id: createdNotif._id.toString(), user: createdNotif.user, inviteeEmail: createdNotif.inviteeEmail });
+            } else {
+                console.log(`Skipping in-app invite notification for ${inviteeEmail} because user opted out of web notifications.`);
+            }
+        } catch (err) {
+            console.error('Error creating invite notification for invitee:', err);
+        }
 
         // 6. Send response
         const populatedInvite = await Invitation.findById(newInvite._id).populate('inviter', 'username');
@@ -216,21 +243,53 @@ const resendInvitation = async (req, res) => {
             await invitation.save();
         }
 
-        // 2. Send email again (fire and forget)
-        const transporter = setupTransporter();
+        // 2. Send email again (fire and forget) if user allows emails
         const inviterName = req.user.username || 'A manager';
-        const mailOptions = {
-            from: `"SyncSpace Invites" <${process.env.EMAIL_USER}>`,
-            to: invitation.inviteeEmail,
-            subject: `[Reminder] You're invited to join '${workspace.name}'!`,
-            html: `<p>Hi,</p><p>This is a reminder that <strong>${inviterName}</strong> invited you to collaborate in "<strong>${workspace.name}</strong>".</p><p>Please log in or sign up on SyncSpace with this email to accept the invitation.</p><p>Thanks,<br>The SyncSpace Team</p>`
-        };
-        
-       await transporter.sendMail(mailOptions).catch(err => {
-           console.error(`Error resending email to ${invitation.inviteeEmail}:`, err);
-       });
+        // If invitee is a registered user, check their preference
+        const inviteeRecord = await User.findOne({ email: invitation.inviteeEmail });
+        if (!inviteeRecord || inviteeRecord.emailNotifications !== false) {
+            const transporter = setupTransporter();
+            const mailOptions = {
+                from: `"SyncSpace Invites" <${process.env.EMAIL_USER}>`,
+                to: invitation.inviteeEmail,
+                subject: `[Reminder] You're invited to join '${workspace.name}'!`,
+                html: `<p>Hi,</p><p>This is a reminder that <strong>${inviterName}</strong> invited you to collaborate in "<strong>${workspace.name}</strong>".</p><p>Please log in or sign up on SyncSpace with this email to accept the invitation.</p><p>Thanks,<br>The SyncSpace Team</p>`
+            };
+            await transporter.sendMail(mailOptions).catch(err => {
+                console.error(`Error resending email to ${invitation.inviteeEmail}:`, err);
+            });
+        } else {
+            console.log(`Skipping resend email to ${invitation.inviteeEmail} because user opted out of email notifications.`);
+        }
 
        // Return the updated invitation (populate inviter info) so client can refresh UI
+       // Create in-app notification for invitee (if registered or unregistered) respecting webNotifications
+       try {
+           // Determine invitee record again (we fetched inviteeRecord above)
+           const inviteeRec = inviteeRecord; // may be null
+           const shouldCreateNotif = !inviteeRec || (inviteeRec && inviteeRec.webNotifications !== false);
+           if (shouldCreateNotif) {
+               const notificationPayload = {
+                   actor: userId,
+                   type: 'invite_resent',
+                   message: `${req.user.username || 'Someone'} resent the invitation to "${workspace.name}".`,
+                   link: `/invitations/respond/${invitation._id}`
+               };
+               if (invitation.inviteeUser) {
+                   notificationPayload.user = invitation.inviteeUser._id ? invitation.inviteeUser._id : invitation.inviteeUser;
+               } else {
+                   notificationPayload.inviteeEmail = invitation.inviteeEmail && invitation.inviteeEmail.toLowerCase();
+                   if (inviteeRec) notificationPayload.user = inviteeRec._id;
+               }
+               const createdNotif = await Notification.create(notificationPayload);
+               console.log('Notification created (invite_resent):', { id: createdNotif._id.toString(), user: createdNotif.user, inviteeEmail: createdNotif.inviteeEmail });
+           } else {
+               console.log(`Skipping in-app resend notification for ${invitation.inviteeEmail} because user opted out of web notifications.`);
+           }
+       } catch (err) {
+           console.error('Error creating resend notification for invitee:', err);
+       }
+
        const populated = await Invitation.findById(invitation._id).populate('inviter', 'username email').populate('inviteeUser', 'username email');
 
        res.status(200).json({ message: 'Invitation resent successfully.', invitation: populated });
@@ -343,17 +402,50 @@ const respondToInvitation = async (req, res) => {
 
             // Notify inviter via email
             try {
-                const transporter = setupTransporter();
-                const mailOptions = {
-                    from: `"SyncSpace Notifications" <${process.env.EMAIL_USER}>`,
-                    to: invitation.inviter ? invitation.inviter.email || process.env.EMAIL_USER : process.env.EMAIL_USER,
-                    subject: `Invitation accepted for '${workspace.name}'`,
-                    html: `<p>The invitation sent to <strong>${invitation.inviteeEmail}</strong> has been accepted and they are now a member of "${workspace.name}".</p>`
-                };
-                transporter.sendMail(mailOptions).catch(err => console.error('Error sending accept notification:', err));
+                // Fetch inviter user record to respect notification preferences
+                let inviterRecord = null;
+                if (invitation.inviter) {
+                    inviterRecord = await User.findById(invitation.inviter._id ? invitation.inviter._id : invitation.inviter);
+                }
+                if (!inviterRecord || inviterRecord.emailNotifications !== false) {
+                    const transporter = setupTransporter();
+                    const mailOptions = {
+                        from: `"SyncSpace Notifications" <${process.env.EMAIL_USER}>`,
+                        to: invitation.inviter && (invitation.inviter.email || inviterRecord?.email) ? (invitation.inviter.email || inviterRecord?.email) : process.env.EMAIL_USER,
+                        subject: `Invitation accepted for '${workspace.name}'`,
+                        html: `<p>The invitation sent to <strong>${invitation.inviteeEmail}</strong> has been accepted and they are now a member of "${workspace.name}".</p>`
+                    };
+                    transporter.sendMail(mailOptions).catch(err => console.error('Error sending accept notification:', err));
+                } else {
+                    console.log(`Skipping accept email to inviter because user ${inviterRecord._id} opted out of email notifications.`);
+                }
             } catch (err) {
                 console.error('Error preparing accept notification:', err);
             }
+
+                // Create an in-app notification for the inviter (if present)
+                try {
+                    const inviterId = invitation.inviter && (invitation.inviter._id ? invitation.inviter._id : invitation.inviter);
+                    if (inviterId) {
+                        // Respect web notification preference if inviter is a registered user
+                        const inviterRec = await User.findById(inviterId);
+                        if (!inviterRec || inviterRec.webNotifications !== false) {
+                            const createdNotif = await Notification.create({
+                                user: inviterId,
+                                actor: req.user._id,
+                                type: 'invitation_response',
+                                message: `${req.user.username || req.user.email} accepted your invitation to \"${workspace.name}\".`,
+                                // Link to Manage Invites page for this workspace so admin can manage invitations
+                                link: `/invitations/manage/${workspace._id}`
+                            });
+                            console.log('Notification created (invitation_response - accepted):', { id: createdNotif._id.toString(), user: createdNotif.user });
+                        } else {
+                            console.log(`Skipping in-app accept notification for inviter ${inviterId} because they opted out of web notifications.`);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error creating accept notification:', err);
+                }
 
             return res.status(200).json({ message: 'Invitation accepted.', invitation });
         }
@@ -364,16 +456,48 @@ const respondToInvitation = async (req, res) => {
 
         // Notify inviter via email about rejection
         try {
-            const transporter = setupTransporter();
-            const mailOptions = {
-                from: `"SyncSpace Notifications" <${process.env.EMAIL_USER}>`,
-                to: invitation.inviter ? invitation.inviter.email || process.env.EMAIL_USER : process.env.EMAIL_USER,
-                subject: `Invitation rejected for '${workspace.name}'`,
-                html: `<p>The invitation sent to <strong>${invitation.inviteeEmail}</strong> has been rejected.</p>`
-            };
-            transporter.sendMail(mailOptions).catch(err => console.error('Error sending reject notification:', err));
+            // Respect inviter's email preference
+            let inviterRecord = null;
+            if (invitation.inviter) {
+                inviterRecord = await User.findById(invitation.inviter._id ? invitation.inviter._id : invitation.inviter);
+            }
+            if (!inviterRecord || inviterRecord.emailNotifications !== false) {
+                const transporter = setupTransporter();
+                const mailOptions = {
+                    from: `"SyncSpace Notifications" <${process.env.EMAIL_USER}>`,
+                    to: invitation.inviter && (invitation.inviter.email || inviterRecord?.email) ? (invitation.inviter.email || inviterRecord?.email) : process.env.EMAIL_USER,
+                    subject: `Invitation rejected for '${workspace.name}'`,
+                    html: `<p>The invitation sent to <strong>${invitation.inviteeEmail}</strong> has been rejected.</p>`
+                };
+                transporter.sendMail(mailOptions).catch(err => console.error('Error sending reject notification:', err));
+            } else {
+                console.log(`Skipping reject email to inviter because user ${inviterRecord._id} opted out of email notifications.`);
+            }
         } catch (err) {
             console.error('Error preparing reject notification:', err);
+        }
+
+        // Create in-app notification for inviter about rejection
+        try {
+            const inviterId = invitation.inviter && (invitation.inviter._id ? invitation.inviter._id : invitation.inviter);
+            if (inviterId) {
+                const inviterRec = await User.findById(inviterId);
+                if (!inviterRec || inviterRec.webNotifications !== false) {
+                    const createdNotif = await Notification.create({
+                        user: inviterId,
+                        actor: req.user._id,
+                        type: 'invitation_response',
+                        message: `${req.user.username || req.user.email} rejected your invitation to \"${workspace.name}\".`,
+                        // Link to Manage Invites page for this workspace so admin can manage invitations
+                        link: `/invitations/manage/${workspace._id}`
+                    });
+                    console.log('Notification created (invitation_response - rejected):', { id: createdNotif._id.toString(), user: createdNotif.user });
+                } else {
+                    console.log(`Skipping in-app reject notification for inviter ${inviterId} because they opted out of web notifications.`);
+                }
+            }
+        } catch (err) {
+            console.error('Error creating reject notification:', err);
         }
 
         res.status(200).json({ message: 'Invitation rejected.', invitation });

@@ -12,6 +12,7 @@ import contactRoutes from './routes/contact.routes.js';
 import messageRoutes from './routes/message.routes.js';
 // --- NEW: Import invitation routes ---
 import invitationRoutes from './routes/invitation.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +36,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // --- Database Connection ---
 const connectDB = async () => {

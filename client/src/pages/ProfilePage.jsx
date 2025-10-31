@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:5000';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -25,6 +26,8 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
 
   // Placeholder state for editable fields
   const [name, setName] = useState('');
@@ -43,12 +46,15 @@ const ProfilePage = () => {
           setLoading(true);
           setError('');
           try {
+            const token = currentUser?.token || currentUser?.user?.token;
             const config = {
-              headers: { Authorization: `Bearer ${currentUser.token}` },
+              headers: { Authorization: `Bearer ${token}` },
             };
-            const response = await axios.get('http://localhost:5000/api/users/me', config);
+            const response = await axios.get(`${API_BASE}/api/users/me`, config);
             setProfileData(response.data);
             setUsername(response.data.username || '');
+            setName(response.data.name || '');
+            setAbout(response.data.about || '');
             // Initialize name and about if they exist in response (add later)
             // setName(response.data.name || '');
             // setAbout(response.data.about || '');
@@ -68,14 +74,46 @@ const ProfilePage = () => {
       if (isEditing && profileData) {
           setUsername(profileData.username || '');
           // Reset name/about later
+          setUsernameError('');
+          setError('');
+          setSaveSuccess('');
       }
   };
 
   const handleSave = async () => {
-      console.log("Saving profile changes (not implemented):", { name, username, about });
-      alert("Profile saving not yet implemented.");
-      // TODO: Add backend API call here
+    setUsernameError('');
+    setError('');
+    setSaveSuccess('');
+    try {
+      const token = currentUser?.token || currentUser?.user?.token;
+      const cfg = { headers: { Authorization: `Bearer ${token}` } };
+      const payload = { name, username, about };
+      const res = await axios.patch(`${API_BASE}/api/users/me`, payload, cfg);
+      setProfileData(res.data);
+      setUsername(res.data.username || '');
+      setName(res.data.name || '');
+      setAbout(res.data.about || '');
       setIsEditing(false);
+      setSaveSuccess('Profile updated successfully.');
+      // clear any previous field errors
+      setUsernameError('');
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      const msg = err.response?.data?.message;
+      // If server returned a validation/duplicate username error, show it inline
+      if (err.response?.status === 400 && msg) {
+        // Try to attach it to the username field if it mentions "username"
+        if (msg.toLowerCase().includes('username')) {
+          setUsernameError(msg);
+        } else {
+          setError(msg);
+        }
+      } else if (err.response?.status === 404) {
+        setError('Profile endpoint not found (404). Please restart the backend server.');
+      } else {
+        setError(msg || 'Failed to save profile.');
+      }
+    }
   };
 
 
@@ -129,6 +167,7 @@ const ProfilePage = () => {
                        className="w-full bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-indigo-500 outline-none text-white" // Added text-white
                     />
                ) : ( <p className="text-lg font-semibold">{profileData.username}</p> )}
+          {usernameError && <p className="text-sm text-red-400 mt-1">{usernameError}</p>}
              </div>
 
             {/* About */}
@@ -157,6 +196,9 @@ const ProfilePage = () => {
                     <button onClick={handleEditToggle} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg transition-colors">Cancel</button>
                 </div>
             )}
+      {/* Success / Error messages for save */}
+      {saveSuccess && <p className="text-center text-green-400 mt-4">{saveSuccess}</p>}
+      {error && <p className="text-center text-red-500 mt-4">{error}</p>}
           </div>
         )}
 

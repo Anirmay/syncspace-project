@@ -1,6 +1,7 @@
 import Workspace from '../models/Workspace.js';
 import User from '../models/User.js'; // Needed for email invites
 import Invitation from '../models/Invitation.js';
+import Notification from '../models/Notification.js';
 import Board from '../models/Board.js'; // --- ADDED: Needed for cascade delete
 import Task from '../models/Task.js';   // --- ADDED: Needed for cascade delete
 import mongoose from 'mongoose';
@@ -399,6 +400,40 @@ const removeMemberFromWorkspace = async (req, res) => {
             if (email) deleteQuery.$or.push({ inviteeEmail: email });
             if (deleteQuery.$or.length > 0) {
                 await Invitation.deleteMany(deleteQuery);
+            }
+            // Create an in-app notification for the removed user to inform them
+            try {
+                if (memberUserId) {
+                    // Find removed user's id/email for message and admin name
+                    const removedUser = await User.findById(memberUserId).select('username email');
+                    const removedUsername = removedUser?.username || removedUser?.email || 'A user';
+                    // Fetch admin name (actor) if not present on req.user
+                    let adminName = req.user?.username;
+                    try {
+                        if (!adminName) {
+                            const adminRec = await User.findById(currentUserId).select('username email');
+                            adminName = adminRec?.username || adminRec?.email || 'A manager';
+                        }
+                    } catch (e) {
+                        console.warn('Could not fetch admin user for notification name:', e);
+                        adminName = adminName || 'A manager';
+                    }
+
+                    const notifPayload = {
+                        user: memberUserId,
+                        actor: currentUserId,
+                        type: 'removed_from_workspace',
+                        message: `You were removed from the workspace \"${workspace.name}\" by ${adminName}.`,
+                        link: `/`, // landing link; user no longer has access to workspace
+                    };
+                    if (removedUser?.email) notifPayload.inviteeEmail = removedUser.email.toLowerCase();
+
+                    console.log('Creating removal notification with payload:', notifPayload);
+                    const notif = await Notification.create(notifPayload);
+                    console.log('Notification created (removed_from_workspace):', { id: notif._id.toString(), user: notif.user, inviteeEmail: notif.inviteeEmail });
+                }
+            } catch (notifErr) {
+                console.error('Error creating removal notification for user:', notifErr);
             }
         } catch (invDelErr) {
             console.error('Error deleting related invitations after member removal:', invDelErr);

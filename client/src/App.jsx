@@ -7,6 +7,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import ConfirmEmailPage from './pages/ConfirmEmailPage';
 import DashboardPage from './pages/DashboardPage';
 import WorkspacePage from './pages/WorkspacePage';
 import ChatPage from './pages/ChatPage';
@@ -17,6 +18,7 @@ import InvitationsPage from './pages/InvitationsPage';
 // --- FIX: Import Manage Invites Page ---
 import ManageInvitesPage from './pages/ManageInvitesPage';
 import InvitationRespondPage from './pages/InvitationRespondPage';
+import Header from './components/Header';
 
 // Simple component to protect routes
 // It checks if a user is logged in using AuthContext.
@@ -47,6 +49,7 @@ function App() {
 
   return (
     <>
+      <Header />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
@@ -54,6 +57,7 @@ function App() {
         <Route path="/login" element={currentUser ? <Navigate to="/" /> : <AuthPage />} />
         <Route path="/forgot-password" element={currentUser ? <Navigate to="/" /> : <ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={currentUser ? <Navigate to="/" /> : <ResetPasswordPage />} />
+  <Route path="/confirm-email/:token" element={<ConfirmEmailPage />} />
         
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />

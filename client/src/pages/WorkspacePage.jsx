@@ -289,7 +289,7 @@
                                      )}
                                      {task.status === 'done' && <button className="bg-slate-600 hover:bg-slate-500 text-white font-medium py-1.5 px-4 rounded text-sm disabled:opacity-50" disabled>Download Files</button>}
                                      
-                                     <button onClick={handleDeleteClick} className="bg-red-600 hover:bg-red-700 text-white font-medium py-1.5 px-4 rounded text-sm">Delete Task</button>
+                                     <button onClick={handleDeleteClick} className="bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white font-medium py-1.5 px-4 rounded text-sm">Delete Task</button>
                                  </>
                              )}
                          </div>
@@ -313,7 +313,7 @@
                  <button type="button" onClick={onCancel} disabled={isDeleting} className="bg-slate-600 hover:bg-slate-500 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50">
                      Cancel
                  </button>
-                 <button type="button" onClick={onConfirm} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50">
+                 <button type="button" onClick={onConfirm} disabled={isDeleting} className="bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50">
                      {isDeleting ? 'Deleting...' : 'Delete'}
                  </button>
              </div>
@@ -345,7 +345,7 @@
                      type="button"
                      onClick={onConfirm}
                      disabled={isDeleting}
-                     className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 w-36" // Added fixed width for consistency
+                     className="bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 w-36" // Added fixed width for consistency
                  >
                      {isDeleting ? (
                           <> <Spinner small={true} /> Deleting... </> // Use small spinner
@@ -840,6 +840,11 @@
      const [taskToEdit, setTaskToEdit] = useState(null); // Task object for the EDIT MODAL
      const [showDeleteWorkspaceConfirm, setShowDeleteWorkspaceConfirm] = useState(false); // NEW: Workspace delete confirm state
      const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false); // NEW: Workspace deleting state
+    // --- New: Workspace project chat state ---
+    const [workspaceChatOpen, setWorkspaceChatOpen] = useState(false);
+    const [workspaceChatMessages, setWorkspaceChatMessages] = useState([]);
+    const [workspaceChatInput, setWorkspaceChatInput] = useState('');
+    const [loadingWorkspaceChat, setLoadingWorkspaceChat] = useState(false);
  
  
      // --- Fetching Logic (Updated for Preview Handling) ---
@@ -1296,6 +1301,45 @@
              setIsCreatingBoard(false);
          }
      };
+
+    // --- Workspace project chat helpers ---
+    const fetchWorkspaceChat = async () => {
+        if (!currentUser || !currentUser.token) return;
+        setLoadingWorkspaceChat(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+            const res = await axios.get(`http://localhost:5000/api/messages/workspace/${workspaceId}`, config);
+            setWorkspaceChatMessages(res.data || []);
+        } catch (err) {
+            console.error('Failed to load workspace chat:', err);
+        } finally {
+            setLoadingWorkspaceChat(false);
+        }
+    };
+
+    const sendWorkspaceChat = async (e) => {
+        e?.preventDefault?.();
+        if (!workspaceChatInput.trim()) return;
+        const tempId = `temp_${Date.now()}`;
+        const optimistic = { _id: tempId, text: workspaceChatInput, sender: { _id: currentUser?.user?._id, username: currentUser?.user?.username }, createdAt: new Date().toISOString() };
+        setWorkspaceChatMessages(prev => [...prev, optimistic]);
+        setWorkspaceChatInput('');
+        try {
+            if (!currentUser || !currentUser.token) throw new Error('Auth missing');
+            const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+            const res = await axios.post(`http://localhost:5000/api/messages/workspace`, { workspaceId, text: optimistic.text }, config);
+            setWorkspaceChatMessages(prev => prev.map(m => m._id === tempId ? res.data : m));
+        } catch (err) {
+            console.error('Failed to send workspace chat message:', err);
+            alert('Failed to send message');
+            setWorkspaceChatMessages(prev => prev.filter(m => m._id !== tempId));
+        }
+    };
+
+    useEffect(() => {
+        if (workspaceChatOpen) fetchWorkspaceChat();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [workspaceChatOpen]);
  
      // --- Delete Task Handlers ---
       const handleOpenDeleteConfirm = (task) => {
@@ -1529,7 +1573,7 @@
                        {!loading && workspace && currentUser && ( 
                            <button
                                 onClick={handleOpenDeleteWorkspaceConfirm}
-                                className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium py-1.5 px-3 rounded-md flex items-center gap-1 transition-colors mt-2"
+                                className="bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white text-xs font-medium py-1.5 px-3 rounded-md flex items-center gap-1 transition-colors mt-2"
                                 title="Delete Workspace"
                            >
                               <TrashIcon small={true} /> Delete Workspace
@@ -1664,6 +1708,60 @@
                      onTaskUpdated={handleUpdateTaskState} 
                      onCancel={handleCloseEditModal}
                  />
+             )}
+
+             {/* --- Project Chat Button (fixed) --- */}
+             {!workspaceChatOpen && (
+                 <div className="fixed bottom-6 right-6 z-50">
+                     <button onClick={() => setWorkspaceChatOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9M7.5 12h6" /></svg>
+                         <span className="font-medium text-sm">Project Chat</span>
+                     </button>
+                 </div>
+             )}
+
+             {/* --- Project Chat Modal --- */}
+             {workspaceChatOpen && (
+                 <div onClick={() => setWorkspaceChatOpen(false)} className="fixed inset-0 bg-black/60 flex items-end justify-end z-60 p-4">
+                    <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-slate-100 dark:bg-slate-800 rounded-t-lg shadow-xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[92vh] min-h-[60vh]">
+                         <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700">
+                             <h4 className="font-semibold text-slate-900 dark:text-white">Project Chat</h4>
+                             <button onClick={() => setWorkspaceChatOpen(false)} className="text-slate-500 dark:text-slate-300 p-1"><CloseIcon/></button>
+                         </div>
+                         <div className="p-3 overflow-y-auto flex-1 space-y-3">
+                            {loadingWorkspaceChat ? (
+                                <Spinner small={true} />
+                            ) : workspaceChatMessages.length === 0 ? (
+                                <p className="text-slate-500">No messages yet.</p>
+                            ) : (
+                                workspaceChatMessages.map(m => {
+                                    const senderId = m.sender?._id || m.sender;
+                                    const senderUsername = m.sender?.username ?? (typeof m.sender === 'string' ? m.sender : undefined);
+                                    const currentId = currentUser?.user?._id;
+                                    const currentUsername = currentUser?.user?.username;
+                                    const isOwn = (senderId && currentId && String(senderId) === String(currentId)) || (senderUsername && currentUsername && String(senderUsername) === String(currentUsername));
+                                    const bubbleClasses = isOwn ? 'bg-teal-600 text-white' : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white ring-1 ring-slate-200 dark:ring-slate-600';
+                                    const senderName = m.sender?.username || (isOwn ? (currentUser?.user?.username || 'You') : '');
+                                    return (
+                                        <div key={m._id} className={`w-full flex flex-col mb-3 ${isOwn ? 'items-end' : 'items-start'}`}>
+                                            <div className={`flex items-end max-w-[80%] ${isOwn ? 'ml-auto flex-row-reverse' : ''}`}>
+                                                <div className={`px-3 py-2 rounded-lg ${bubbleClasses}`}>
+                                                    {(!isOwn && senderName) && <div className="text-xs font-semibold mb-1 text-slate-500 dark:text-slate-300">{senderName}</div>}
+                                                    <div className="text-sm">{m.text}</div>
+                                                    <div className={`text-xs ${isOwn ? 'text-teal-100' : 'text-slate-400 dark:text-slate-300'} mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                         </div>
+                         <form onSubmit={sendWorkspaceChat} className="p-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                             <input value={workspaceChatInput} onChange={e => setWorkspaceChatInput(e.target.value)} placeholder="Write a message..." className="flex-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded p-2 text-slate-900 dark:text-white" />
+                             <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded">Send</button>
+                         </form>
+                     </div>
+                 </div>
              )}
  
          </div>

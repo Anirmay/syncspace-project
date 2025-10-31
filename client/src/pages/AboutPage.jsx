@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom'; // For the Back Home link
 
 // Placeholder Team Member Card
 const TeamMemberCard = ({ name, role, imageUrl, bio }) => (
@@ -20,9 +19,8 @@ const AboutPage = () => {
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
             <div className="container mx-auto max-w-4xl"> {/* Adjusted max-width */}
-                {/* Header */}
-                <header className="text-center mb-12">
-                     <Link to="/" className="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back Home</Link>
+                {/* Page header */}
+                <header className="text-center mb-8">
                     <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-3">About SyncSpace</h1>
                     <p className="text-lg text-slate-400 max-w-2xl mx-auto">
                         Connecting teams and streamlining collaboration, one workspace at a time.

@@ -4,3 +4,194 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Light-mode overrides: when the `dark` class is NOT present on <html>,
+   map common dark-tailwind utility classes to a light color palette so
+   the existing markup (which currently uses dark utilities) will
+   render in a pleasant light theme without editing every file.
+
+   This is an intentional, pragmatic shim to enable a full light theme
+   quickly. It's safe to remove once components are migrated to
+   use `dark:` variants and light-first utility classes.
+*/
+:root {
+  --ss-bg: #f3f6fb; /* soft off-white with cool tint */
+  --ss-panel: #fbfdff; /* near-white panel */
+  --ss-panel-2: #f1f5f9; /* light panel / muted card */
+  --ss-input: #eef2f7; /* slightly blue-tinged input */
+  --ss-border: #e6eaf0; /* gray-200 */
+  --ss-text: #0f172a; /* slate-900 */
+  --ss-muted: #64748b; /* slate-500 */
+  --ss-accent: #6366f1; /* indigo-500 */
+  --ss-hero-from: #4f46e5; /* indigo-600 */
+  --ss-hero-to: #6366f1; /* indigo-500 */
+  --ss-hero-text: #0b1220; /* dark title color for hero */
+}
+
+/* Apply background/text defaults to the page in light mode */
+:root:not(.dark) body,
+:root:not(.dark) .min-h-screen,
+:root:not(.dark) .bg-slate-900 {
+  background-color: var(--ss-bg) !important;
+}
+
+/* Panels/cards */
+:root:not(.dark) .bg-slate-800,
+:root:not(.dark) .bg-slate-800\/50 {
+  /* For light mode, make large page panels transparent so pages don't show
+     stark white blocks behind headings/sections. Individual small cards can
+     still use subtle borders. */
+  background-color: transparent !important;
+  color: var(--ss-text) !important;
+}
+
+/* Inputs and lighter panels */
+:root:not(.dark) .bg-slate-700 {
+  /* Make smaller input/panel backgrounds transparent in light mode to
+     avoid full-width white cards — keep text color readable. */
+  background-color: transparent !important;
+  color: var(--ss-text) !important;
+}
+
+/* Map general `bg-slate-600` to a light input color so form inputs look light */
+:root:not(.dark) .bg-slate-600 {
+  background-color: transparent !important;
+  color: var(--ss-text) !important;
+}
+
+/* Toggle rows (explicit semantic class) - darker band to host switches */
+:root:not(.dark) .toggle-row {
+  background-color: #e6eefc !important; /* very light indigo tint */
+  color: var(--ss-text) !important;
+}
+
+/* Muted text and smaller copy */
+:root:not(.dark) .text-slate-400,
+:root:not(.dark) .text-slate-300 {
+  color: var(--ss-muted) !important;
+}
+
+/* Make headings that used `text-slate-200` visible in light mode */
+:root:not(.dark) .text-slate-200 {
+  color: #1f2937 !important; /* slate-800 — clear heading color */
+}
+
+/* Ensure semantic headings are visible in light mode */
+:root:not(.dark) h1,
+:root:not(.dark) h2,
+:root:not(.dark) h3,
+:root:not(.dark) h4,
+:root:not(.dark) h5,
+:root:not(.dark) h6 {
+  color: var(--ss-text) !important;
+}
+
+/* Common page title/heading classes (in case components use them) */
+:root:not(.dark) .page-title,
+:root:not(.dark) .heading,
+:root:not(.dark) .title {
+  color: var(--ss-text) !important;
+}
+
+/* Ensure header/nav is visible in light mode */
+:root:not(.dark) header,
+:root:not(.dark) .site-header,
+:root:not(.dark) .sticky.top-0 {
+  background-color: var(--ss-panel) !important;
+  color: var(--ss-text) !important;
+}
+
+/* Header links and logo */
+:root:not(.dark) header a,
+:root:not(.dark) header .text-2xl,
+:root:not(.dark) .nav-link,
+:root:not(.dark) .icon-button {
+  color: var(--ss-text) !important;
+}
+
+/* Notification dropdown: ensure it has a visible panel in light mode */
+:root:not(.dark) .header-notifications {
+  background-color: var(--ss-panel) !important;
+  color: var(--ss-text) !important;
+  border-color: rgba(15,23,42,0.06) !important;
+  box-shadow: 0 6px 20px rgba(15,23,42,0.06) !important;
+}
+
+/* Header subtle shadow in light mode */
+:root:not(.dark) header.shadow-md {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* Strong text that was forced white in dark mode */
+:root:not(.dark) .text-white {
+  color: var(--ss-text) !important;
+}
+
+/* Borders */
+:root:not(.dark) .border-slate-700,
+:root:not(.dark) .border-slate-600,
+:root:not(.dark) .border-slate-500 {
+  border-color: var(--ss-border) !important;
+}
+
+/* CTA hero: replace the strong purple gradient with a softer theme-matching gradient */
+:root:not(.dark) .container .relative.bg-gradient-to-r.from-indigo-600.to-indigo-800 {
+  background: linear-gradient(90deg, var(--ss-hero-from), var(--ss-hero-to)) !important;
+  color: var(--ss-hero-text) !important;
+}
+
+/* Ensure hero paragraph uses readable color in light mode */
+:root:not(.dark) .container .relative.bg-gradient-to-r.from-indigo-600.to-indigo-800 p {
+  color: rgba(11,18,32,0.85) !important;
+}
+
+/* Make small card panels use the panel color to match the light theme */
+:root:not(.dark) .bg-slate-800.p-8,
+:root:not(.dark) .bg-slate-800.p-6,
+:root:not(.dark) .bg-slate-800.p-4 {
+  background-color: var(--ss-panel) !important;
+}
+
+/* Hover states that darken panels */
+:root:not(.dark) .hover\:bg-slate-700:hover,
+:root:not(.dark) .hover\:bg-slate-700\/50:hover,
+:root:not(.dark) .hover\:bg-slate-700\/60:hover {
+  background-color: var(--ss-input) !important;
+}
+
+/* Small UI elements (badges, circles) */
+:root:not(.dark) .bg-slate-900.rounded-full,
+:root:not(.dark) .bg-slate-900\.rounded-full {
+  background-color: var(--ss-panel) !important;
+}
+
+/* Accent buttons: keep indigo as-is but ensure readable text */
+:root:not(.dark) .bg-indigo-600 {
+  color: white !important;
+}
+
+/* Utility: ensure placeholders remain readable in light mode */
+:root:not(.dark) ::placeholder {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Scrollbar styles (WebKit and Firefox) - colorful and thin */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--ss-panel); border-radius: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--ss-accent); border-radius: 10px; border: 2px solid var(--ss-panel); }
+*::-webkit-scrollbar-thumb:hover { background: rgba(79,70,229,0.85); }
+
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: var(--ss-accent) var(--ss-panel); }
+
+/* Dark mode variants */
+.dark *::-webkit-scrollbar-track { background: #0b1220; }
+.dark *::-webkit-scrollbar-thumb { background: rgba(88, 112, 255, 0.6); border: 2px solid #0b1220; }
+.dark { scrollbar-color: rgba(88,112,255,0.6) #0b1220; }
+
+/* Limit heavy scrollbars to scrollable regions and keep body clean */
+.scrollbar-thin { scrollbar-width: thin; }
+.scrollbar-thumb-accent::-webkit-scrollbar-thumb { background: var(--ss-accent); }
+
+/* Slightly reduce the default top padding for main hero areas when global header exists */
+main.relative { padding-top: 4rem !important; }

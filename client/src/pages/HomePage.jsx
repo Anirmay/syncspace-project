@@ -1,6 +1,9 @@
 import React, { useState, useContext, useEffect, useRef } from 'react'; // Added useEffect, useRef
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
+// Use Vite env var for API base, fallback to localhost backend
+const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:5000';
 
 // --- SVG Icons ---
 const KanbanIcon = () => (
@@ -81,147 +84,20 @@ const HomePage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { currentUser, logout } = useContext(AuthContext);
   const dropdownRef = useRef(null);
+  const [notifications, setNotifications] = useState([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationsRef = useRef(null);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
-  const handleLogout = () => {
-    if (isMobileMenuOpen) toggleMobileMenu();
-    if (isDropdownOpen) setIsDropdownOpen(false);
-    logout();
-  }
-
-  // Close dropdown if clicked outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-         const isUserIconButton = event.target.closest('button[aria-label="Account menu"]');
-         if (!isUserIconButton) {
-            setIsDropdownOpen(false);
-         }
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownRef]);
-
-  const linkStyle = "text-slate-300 hover:text-indigo-400 transition-colors px-3 py-2 rounded-md text-sm font-medium";
-  const mobileLinkStyle = "text-slate-300 hover:text-indigo-400 transition-colors block w-full text-center py-3 text-base";
-  const iconButtonStyle = "text-slate-300 hover:text-indigo-400 focus:outline-none p-1 rounded-full hover:bg-slate-700 relative";
-
-
   return (
     <div className="bg-slate-900 text-white min-h-screen font-inter">
-      {/* --- Header --- */}
-      <header className="sticky top-0 z-50 bg-slate-900 shadow-md">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8"> {/* Adjusted padding */}
-          <div className="relative flex items-center justify-between h-16">
-
-            {/* Logo */}
-            <div className="flex-shrink-0">
-                <Link to="/" className="text-2xl font-bold">SyncSpace</Link>
-            </div>
-            {/* --- Desktop Navigation (Middle Links) --- */}
-            <div className="hidden md:flex md:ml-6 flex-grow items-center justify-center">
-                <div className="flex space-x-4">
-                     {currentUser ? (
-                         <>
-                            {/* Logged In Links */}
-                            <Link to="#" className={linkStyle} aria-disabled="true" style={{opacity: 0.5, cursor: 'not-allowed'}}>Upload Project</Link> {/* Placeholder */}
-                            <Link to="/dashboard" className={linkStyle}>Workflow Board</Link>
-                            <Link to="/invitations" className={linkStyle}>Invitations</Link>
-                            <Link to="/about" className={linkStyle}>About</Link>
-                            <Link to="/contact" className={linkStyle}>Contact</Link>
-                         </>
-                     ) : (
-                         <>
-                            {/* Logged Out Links */}
-                            <a href="#features" className={linkStyle}>Features</a>
-                            <a href="#testimonials" className={linkStyle}>Testimonials</a>
-                            {/* Add About/Contact here for logged out users if desired */}
-                            <Link to="/about" className={linkStyle}>About</Link>
-                            <Link to="/contact" className={linkStyle}>Contact</Link>
-                         </>
-                     )}
-                </div>
-            </div>
-          {/* --- Right Side Icons/Buttons --- */}
-            <div className="hidden md:flex items-center space-x-4">
-                {currentUser ? (
-                  <>
-                    <Link to="/chat" className={iconButtonStyle} aria-label="Chat">
-                        <ChatBubbleIcon />
-                    </Link>
-                    {/* Notification Icon */}
-                    <button className={iconButtonStyle} aria-label="Notifications">
-                      <BellIcon />
-                      {/* Optional: Badge */}
-                    </button>
-
-                    {/* Account Icon Dropdown */}
-                    <div className="relative" ref={dropdownRef}>
-                      <button onClick={toggleDropdown} className="flex items-center text-slate-300 hover:text-indigo-400 focus:outline-none p-1 rounded-full hover:bg-slate-700" aria-label="Account menu"> <UserIcon /> </button>
-                      <div className={`absolute right-0 mt-2 w-48 bg-slate-800 rounded-md shadow-lg py-1 border border-slate-700 transition-all duration-200 ease-out origin-top-right ${isDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-                         <div className="px-4 py-2 text-sm text-slate-400 border-b border-slate-700">Hi, {currentUser.user?.username || 'User'}!</div>
-                         <Link to="/profile" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" onClick={() => setIsDropdownOpen(false)}>User Profile</Link>
-                         <Link to="/account-settings" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" onClick={() => setIsDropdownOpen(false)}>Account Settings</Link>
-                         <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">Logout</button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" className={linkStyle}>Login</Link>
-                    <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition-colors text-sm">Get Started</Link>
-                  </>
-                )}
-            </div>
-          {/* --- Mobile Menu Button --- */}
-            <div className="-mr-2 flex md:hidden"> {/* Adjusted margin */}
-              <button onClick={toggleMobileMenu} className="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded={isMobileMenuOpen}>
-                <span className="sr-only">Open main menu</span>
-                {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* --- Mobile Menu --- */}
-        <div className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-slate-700"> {/* Added border */}
-              {currentUser ? (
-                 <>
-                    <Link to="#" className={mobileLinkStyle} aria-disabled="true" style={{opacity: 0.5, cursor: 'not-allowed'}} onClick={toggleMobileMenu}>Upload Project</Link>
-                    <Link to="/dashboard" className={mobileLinkStyle} onClick={toggleMobileMenu}>Workflow Board</Link>
-                    <Link to="/invitations" className={mobileLinkStyle} onClick={toggleMobileMenu}>Invitations</Link>
-                    <Link to="/chat" className={mobileLinkStyle} onClick={toggleMobileMenu}>Chat</Link>
-                    <Link to="/about" className={mobileLinkStyle} onClick={toggleMobileMenu}>About</Link>
-                    <Link to="/contact" className={mobileLinkStyle} onClick={toggleMobileMenu}>Contact</Link>
-                    <hr className="border-slate-700 my-2"/>
-                    {/* Simplified mobile - account links */}
-                    <Link to="/profile" className={mobileLinkStyle} onClick={toggleMobileMenu}>User Profile</Link>
-                    <Link to="/account-settings" className={mobileLinkStyle} onClick={toggleMobileMenu}>Account Settings</Link>
-                    {/* Add Notifications Link */}
-                     <Link to="#" className={mobileLinkStyle} onClick={toggleMobileMenu}>Notifications</Link>
-                    <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg block w-full text-center mt-2">Logout</button>
-                 </>
-              ) : (
-                <>
-                  <a href="#features" className={mobileLinkStyle} onClick={toggleMobileMenu}>Features</a>
-                  <a href="#testimonials" className={mobileLinkStyle} onClick={toggleMobileMenu}>Testimonials</a>
-                  <Link to="/about" className={mobileLinkStyle} onClick={toggleMobileMenu}>About</Link>
-                  <Link to="/contact" className={mobileLinkStyle} onClick={toggleMobileMenu}>Contact</Link>
-                  <hr className="border-slate-700 my-2"/>
-                  <Link to="/login" className={mobileLinkStyle} onClick={toggleMobileMenu}>Login</Link>
-                  <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg block w-full text-center mt-2" onClick={toggleMobileMenu}>Get Started</Link>
-                </>
-              )}
-            </div>
-        </div>
-      </header>
+      {/* Header moved to global Header component (rendered in App.jsx) */}
+      {/* --- Hero Section --- */}
       
       {/* --- Hero Section --- */}
-       <main className="relative container mx-auto px-6 text-center pt-24 pb-16 overflow-hidden">
+  <main className="relative container mx-auto px-6 text-center pt-16 pb-16 overflow-hidden">
          <div className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-indigo-700/30 rounded-full filter blur-3xl opacity-50" />
          <div className="relative z-10">
            <h2 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">Unify Your Workflow.<br /><span className="text-indigo-400">Collaborate in Real-Time.</span></h2>

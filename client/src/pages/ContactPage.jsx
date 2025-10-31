@@ -53,9 +53,8 @@ const ContactPage = () => {
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
             <div className="container mx-auto max-w-4xl">
-                {/* Header */}
-                <header className="text-center mb-12">
-                     <Link to="/" className="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back Home</Link>
+                {/* Page header */}
+                <header className="text-center mb-8">
                     <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-3">Contact Us</h1>
                     <p className="text-lg text-slate-400 max-w-2xl mx-auto">
                         We'd love to hear from you. Reach out with questions, feedback, or inquiries.

@@ -45,13 +45,15 @@ const createWorkspaceMessage = async (req, res) => {
     // If you need workspace messages too, adjust routes/logic or keep separate.
     // This function assumes a route like POST /api/workspaces/:workspaceId/messages
     const { text } = req.body;
-    const { workspaceId } = req.params; // If getting ID from route param
+    // Accept workspaceId from either route params or request body (client may send in body)
+    const workspaceId = req.params?.workspaceId || req.body?.workspaceId;
     const senderId = req.user._id;
 
     if (!text || !text.trim()) {
         return res.status(400).json({ message: 'Message text cannot be empty.' });
     }
     if (!workspaceId || !mongoose.Types.ObjectId.isValid(workspaceId)) {
+        console.warn('createWorkspaceMessage missing/invalid workspaceId:', workspaceId);
         return res.status(400).json({ message: 'Invalid or missing Workspace ID.' });
     }
      try {
