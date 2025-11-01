@@ -123,7 +123,7 @@ const CreateProjectDetailsPage = () => {
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
             <div className="container mx-auto max-w-2xl">
                 <header className="mb-8">
-                     <Link to="/dashboard" className="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to Workspaces</Link>
+                     <Link to="/dashboard" className="text-indigo-400 hover:underline mb-4 hidden md:inline-block">&larr; Back to Workspaces</Link>
                      <h1 className="text-3xl font-bold text-white">Create New Project - Details</h1>
                 </header>
 

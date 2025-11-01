@@ -19,6 +19,7 @@ import InvitationsPage from './pages/InvitationsPage';
 import ManageInvitesPage from './pages/ManageInvitesPage';
 import InvitationRespondPage from './pages/InvitationRespondPage';
 import Header from './components/Header';
+import ScrollToTop from './components/ScrollToTop';
 
 // Simple component to protect routes
 // It checks if a user is logged in using AuthContext.
@@ -50,6 +51,7 @@ function App() {
   return (
     <>
       <Header />
+      <ScrollToTop />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
@@ -63,20 +65,19 @@ function App() {
         <Route path="/contact" element={<ContactPage />} />
 
         {/* --- PROTECTED ROUTES --- */}
-        <Route path="/profile" element={ <ProtectedRoute> <ProfilePage /> </ProtectedRoute> } />
-        <Route path="/account-settings" element={ <ProtectedRoute> <AccountSettingsPage /> </ProtectedRoute> } />
-        <Route path="/dashboard" element={ <ProtectedRoute> <DashboardPage /> </ProtectedRoute> } />
-        <Route path="/workspace/:workspaceId" element={ <ProtectedRoute> <WorkspacePage /> </ProtectedRoute> } />
+  <Route path="/profile" element={ <ProtectedRoute> <ProfilePage /> </ProtectedRoute> } />
+  <Route path="/account-settings" element={ <ProtectedRoute> <AccountSettingsPage /> </ProtectedRoute> } />
+  {/* Make dashboard and invitations accessible without forcing login */}
+  <Route path="/dashboard" element={ <DashboardPage /> } />
+  <Route path="/workspace/:workspaceId" element={ <ProtectedRoute> <WorkspacePage /> </ProtectedRoute> } />
         {/* --- NEW: Chat Route --- */}
-        <Route
-            path="/chat"
-            element={ <ProtectedRoute> <ChatPage /> </ProtectedRoute> }
-        />
-        <Route path="/create-project-details" element={ <ProtectedRoute> <CreateProjectDetailsPage /> </ProtectedRoute> } />
-        <Route
-            path="/invitations"
-            element={ <ProtectedRoute> <InvitationsPage /> </ProtectedRoute> }
-        />
+    <Route
+      path="/chat"
+      element={ <ProtectedRoute> <ChatPage /> </ProtectedRoute> }
+    />
+    <Route path="/create-project-details" element={ <ProtectedRoute> <CreateProjectDetailsPage /> </ProtectedRoute> } />
+    {/* Invitations should be viewable without signing in */}
+    <Route path="/invitations" element={ <InvitationsPage /> } />
     <Route
       path="/invitations/respond/:inviteId"
       element={<ProtectedRoute><InvitationRespondPage /></ProtectedRoute>}

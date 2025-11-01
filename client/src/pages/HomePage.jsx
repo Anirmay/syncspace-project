@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react'; // Added useEffect, useRef
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 // Use Vite env var for API base, fallback to localhost backend
@@ -80,6 +80,7 @@ const ChatBubbleIcon = () => (
 );
 const MailIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 inline-block"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>);
 const HomePage = () => {
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { currentUser, logout } = useContext(AuthContext);
@@ -91,50 +92,82 @@ const HomePage = () => {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
+  // If navigation requested a scroll (via header), perform a smooth scroll to the target
+  useEffect(() => {
+    try {
+      const targetFromState = location?.state?.scrollTo;
+      const hash = location?.hash;
+      const target = targetFromState || (hash ? hash.replace('#', '') : null);
+      if (target) {
+        // small timeout to let the page render
+        setTimeout(() => {
+          const el = document.getElementById(target);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
+        // remove history state/hash so repeated visits don't re-trigger
+        try {
+          const cleanUrl = window.location.pathname + window.location.search;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [location]);
+
   return (
-    <div className="bg-slate-900 text-white min-h-screen font-inter">
+    <div className="min-h-screen font-inter bg-white text-slate-900 dark:bg-slate-900 dark:text-white">
       {/* Header moved to global Header component (rendered in App.jsx) */}
       {/* --- Hero Section --- */}
       
       {/* --- Hero Section --- */}
   <main className="relative container mx-auto px-6 text-center pt-16 pb-16 overflow-hidden">
-         <div className="absolute -top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-indigo-700/30 rounded-full filter blur-3xl opacity-50" />
+         {/* decorative gradient blobs */}
+         <div className="absolute -top-40 left-1/4 w-80 h-80 rounded-full bg-gradient-to-br from-indigo-400 to-teal-300 opacity-20 blur-3xl -z-10"></div>
+         <div className="absolute -top-24 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-pink-400 to-indigo-500 opacity-12 blur-3xl -z-10"></div>
          <div className="relative z-10">
-           <h2 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">Unify Your Workflow.<br /><span className="text-indigo-400">Collaborate in Real-Time.</span></h2>
-           <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-8">SyncSpace is an all-in-one platform that allows teams to manage projects, share documents, and communicate seamlessly, eliminating the need for multiple disconnected tools.</p>
-           {!currentUser && (<Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors transform hover:scale-105 inline-block">Start for Free</Link>)}
+           <h2 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">Unify Your Workflow.<br />
+             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-teal-400 dark:from-indigo-300 dark:to-teal-300">Collaborate in Real-Time.</span>
+           </h2>
+           <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8">SyncSpace is an all-in-one platform that allows teams to manage projects, share documents, and communicate seamlessly — no more switching between tools.</p>
+           <div className="flex items-center justify-center gap-4">
+             {!currentUser && (<Link to="/register" className="inline-block bg-gradient-to-r from-indigo-600 to-teal-400 hover:from-indigo-500 hover:to-teal-300 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transform hover:-translate-y-0.5 transition">Start for Free</Link>)}
+             <Link to="/about" className="inline-block text-sm font-medium text-slate-600 dark:text-slate-300 hover:underline">Learn more</Link>
+           </div>
          </div>
        </main>
 
       {/* --- Social Proof Section --- */}
       <section className="py-12">
         <div className="container mx-auto px-6 text-center">
-          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6">Trusted by teams at forward-thinking companies</p>
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">Trusted by teams at forward-thinking companies</p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
-            <span className="text-2xl font-bold text-slate-500 opacity-60">FutureTech</span>
-            <span className="text-2xl font-bold text-slate-500 opacity-60">Quantum Leap</span>
-            <span className="text-2xl font-bold text-slate-500 opacity-60">Nova Solutions</span>
-            <span className="text-2xl font-bold text-slate-500 opacity-60">Apex Dynamics</span>
+            <span className="text-2xl font-semibold text-indigo-600 dark:text-indigo-300 opacity-90">FutureTech</span>
+            <span className="text-2xl font-semibold text-teal-600 dark:text-teal-300 opacity-90">Quantum Leap</span>
+            <span className="text-2xl font-semibold text-pink-600 dark:text-pink-300 opacity-90">Nova Solutions</span>
+            <span className="text-2xl font-semibold text-sky-600 dark:text-sky-300 opacity-90">Apex Dynamics</span>
           </div>
         </div>
       </section>
 
       {/* --- Stats Section --- */}
-      <section className="py-16 bg-slate-800/50">
+    <section className="py-16">
           <div className="container mx-auto px-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                  <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-                      <h4 className="text-3xl font-bold text-indigo-400 mb-2">10k+</h4>
-                      <p className="text-slate-400 flex items-center justify-center"><UsersIcon /> Active Users</p>
-                  </div>
-                  <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-                      <h4 className="text-3xl font-bold text-indigo-400 mb-2">500+</h4>
-                      <p className="text-slate-400 flex items-center justify-center"><FolderIcon /> Workspaces Created</p>
-                  </div>
-                  <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
-                      <h4 className="text-3xl font-bold text-indigo-400 mb-2">99.9%</h4>
-                      <p className="text-slate-400 flex items-center justify-center"><ClockIcon /> Uptime Guarantee</p>
-                  </div>
+          <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+            <h4 className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-300 mb-2">10k+</h4>
+            <p className="text-slate-600 dark:text-slate-300 flex items-center justify-center"><UsersIcon /> Active Users</p>
+          </div>
+          <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+            <h4 className="text-3xl font-extrabold text-teal-600 dark:text-teal-300 mb-2">500+</h4>
+            <p className="text-slate-600 dark:text-slate-300 flex items-center justify-center"><FolderIcon /> Workspaces Created</p>
+          </div>
+          <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+            <h4 className="text-3xl font-extrabold text-pink-600 dark:text-pink-300 mb-2">99.9%</h4>
+            <p className="text-slate-600 dark:text-slate-300 flex items-center justify-center"><ClockIcon /> Uptime Guarantee</p>
+          </div>
               </div>
           </div>
       </section>
@@ -145,53 +178,53 @@ const HomePage = () => {
            <h3 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need in One Place</h3>
            <p className="text-slate-400 max-w-xl mx-auto mb-16">Stop switching between apps. SyncSpace brings your entire workflow into one unified hub.</p>
            <div className="grid md:grid-cols-3 gap-8">
-             <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 transform hover:-translate-y-2 transition-transform duration-300">
-               <div className="inline-block p-4 bg-slate-900 rounded-full mb-6"><KanbanIcon /></div>
+             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+               <div className="inline-block p-4 rounded-full mb-6 bg-gradient-to-br from-indigo-500 to-teal-400 text-white"><KanbanIcon /></div>
                <h4 className="text-xl font-bold mb-2">Dynamic Kanban Boards</h4>
-               <p className="text-slate-400">Visualize your workflow with interactive, drag-and-drop task boards for effortless project management.</p>
+               <p className="text-slate-600 dark:text-slate-300">Visualize your workflow with interactive, drag-and-drop task boards for effortless project management.</p>
              </div>
-             <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 transform hover:-translate-y-2 transition-transform duration-300">
-               <div className="inline-block p-4 bg-slate-900 rounded-full mb-6"><DocIcon /></div>
+             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+               <div className="inline-block p-4 rounded-full mb-6 bg-gradient-to-br from-pink-500 to-indigo-500 text-white"><DocIcon /></div>
                <h4 className="text-xl font-bold mb-2">Real-time Document Editor</h4>
-               <p className="text-slate-400">Collaborate on documents simultaneously, just like Google Docs, ensuring everyone is always on the same page.</p>
+               <p className="text-slate-600 dark:text-slate-300">Collaborate on documents simultaneously, ensuring everyone is always on the same page.</p>
              </div>
-             <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 transform hover:-translate-y-2 transition-transform duration-300">
-               <div className="inline-block p-4 bg-slate-900 rounded-full mb-6"><ChatIcon /></div>
+             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+               <div className="inline-block p-4 rounded-full mb-6 bg-gradient-to-br from-sky-500 to-indigo-500 text-white"><ChatIcon /></div>
                <h4 className="text-xl font-bold mb-2">Integrated Chat</h4>
-               <p className="text-slate-400">Communicate in real-time with dedicated chat channels for each workspace, keeping all your conversations organized.</p>
+               <p className="text-slate-600 dark:text-slate-300">Communicate in real-time with dedicated chat channels for each workspace, keeping conversations organized.</p>
              </div>
            </div>
          </div>
       </section>
 
       {/* --- Testimonials Section --- */}
-      <section id="testimonials" className="py-24 bg-slate-800/50">
+      <section id="testimonials" className="py-24">
         <div className="container mx-auto px-6">
           <h3 className="text-3xl md:text-4xl font-bold text-center mb-16">What Our Users Say</h3>
           <div className="grid lg:grid-cols-3 gap-8">
-            <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
-              <QuoteIcon />
-              <p className="text-lg text-slate-300 italic my-6">"SyncSpace has revolutionized how our team works..."</p>
+            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <div className="flex items-start gap-4"><div className="p-3 rounded-full bg-indigo-50 dark:bg-indigo-900"><QuoteIcon /></div><div className="flex-1">
+              <p className="text-lg text-slate-700 dark:text-slate-300 italic my-6">"SyncSpace has revolutionized how our team works and saved us hours every week."</p>
               <div className="flex items-center">
                 <img className="w-12 h-12 rounded-full mr-4" src="https://placehold.co/100x100/6366F1/FFFFFF?text=SA" alt="Sarah Adams" />
-                <div><h5 className="font-bold text-white">Sarah Adams</h5><p className="text-sm text-slate-400">Project Manager, FutureTech</p></div>
-              </div>
+                <div><h5 className="font-bold text-slate-900 dark:text-white">Sarah Adams</h5><p className="text-sm text-slate-500 dark:text-slate-400">Project Manager, FutureTech</p></div>
+              </div></div></div>
             </div>
-            <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
-              <QuoteIcon />
-              <p className="text-lg text-slate-300 italic my-6">"Having our tasks, docs, and chat in one place is a game-changer..."</p>
+            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <div className="flex items-start gap-4"><div className="p-3 rounded-full bg-teal-50 dark:bg-teal-900"><QuoteIcon /></div><div className="flex-1">
+              <p className="text-lg text-slate-700 dark:text-slate-300 italic my-6">"Having tasks, docs, and chat in one place is a true game-changer."</p>
               <div className="flex items-center">
-                <img className="w-12 h-12 rounded-full mr-4" src="https://placehold.co/100x100/6366F1/FFFFFF?text=MK" alt="Mark Chen" />
-                <div><h5 className="font-bold text-white">Mark Chen</h5><p className="text-sm text-slate-400">Lead Developer, Nova Solutions</p></div>
-              </div>
+                <img className="w-12 h-12 rounded-full mr-4" src="https://placehold.co/100x100/06B6D4/FFFFFF?text=MK" alt="Mark Chen" />
+                <div><h5 className="font-bold text-slate-900 dark:text-white">Mark Chen</h5><p className="text-sm text-slate-500 dark:text-slate-400">Lead Developer, Nova Solutions</p></div>
+              </div></div></div>
             </div>
-            <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
-              <QuoteIcon />
-              <p className="text-lg text-slate-300 italic my-6">"As a remote team, SyncSpace is our virtual office..."</p>
+            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <div className="flex items-start gap-4"><div className="p-3 rounded-full bg-pink-50 dark:bg-pink-900"><QuoteIcon /></div><div className="flex-1">
+              <p className="text-lg text-slate-700 dark:text-slate-300 italic my-6">"As a remote team, SyncSpace is our virtual office and keeps us connected."</p>
               <div className="flex items-center">
-                <img className="w-12 h-12 rounded-full mr-4" src="https://placehold.co/100x100/6366F1/FFFFFF?text=EJ" alt="Emily Johnson" />
-                <div><h5 className="font-bold text-white">Emily Johnson</h5><p className="text-sm text-slate-400">Design Lead, Quantum Leap</p></div>
-              </div>
+                <img className="w-12 h-12 rounded-full mr-4" src="https://placehold.co/100x100/EC4899/FFFFFF?text=EJ" alt="Emily Johnson" />
+                <div><h5 className="font-bold text-slate-900 dark:text-white">Emily Johnson</h5><p className="text-sm text-slate-500 dark:text-slate-400">Design Lead, Quantum Leap</p></div>
+              </div></div></div>
             </div>
           </div>
         </div>
@@ -200,10 +233,14 @@ const HomePage = () => {
       {/* --- Final CTA Section --- */}
       <section className="py-24">
         <div className="container mx-auto px-6 text-center">
-          <div className="relative bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-2xl p-12 overflow-hidden">
+          <div className="relative rounded-2xl p-12 overflow-hidden bg-gradient-to-r from-indigo-600 to-teal-400 text-white shadow-xl">
             <h3 className="text-3xl md:text-4xl font-extrabold mb-4">Ready to Streamline Your Workflow?</h3>
-            <p className="text-lg text-indigo-200 max-w-xl mx-auto mb-8">Join thousands of teams building their best work on SyncSpace. Get started for free—no credit card required.</p>
-            {!currentUser && (<Link to="/register" className="bg-white hover:bg-slate-100 text-indigo-700 font-bold py-3 px-8 rounded-lg text-lg transition-colors transform hover:scale-105 inline-block">Sign Up Now</Link>)}
+            <p className="text-lg max-w-xl mx-auto mb-8">Join thousands of teams building their best work on SyncSpace. Get started for free—no credit card required.</p>
+            <div className="flex items-center justify-center gap-4">
+              {!currentUser && (<Link to="/register" className="inline-block bg-white text-indigo-700 font-bold py-3 px-8 rounded-full text-lg shadow-md hover:translate-y-0.5 transition">Sign Up Now</Link>)}
+              <Link to="/contact" className="text-white/90 hover:underline">Contact Sales</Link>
+            </div>
+            <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
           </div>
         </div>
       </section>

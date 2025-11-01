@@ -54,7 +54,7 @@ const ContactPage = () => {
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
             <div className="container mx-auto max-w-4xl">
                 {/* Page header */}
-                <header className="text-center mb-8">
+                <header className="page-header text-center mb-8">
                     <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-3">Contact Us</h1>
                     <p className="text-lg text-slate-400 max-w-2xl mx-auto">
                         We'd love to hear from you. Reach out with questions, feedback, or inquiries.
@@ -63,7 +63,7 @@ const ContactPage = () => {
 
                 <div className="grid md:grid-cols-2 gap-12">
                     {/* Contact Info Section */}
-                    <div className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700">
+                    <div className="card p-8">
                         <h2 className="text-2xl font-bold text-indigo-400 mb-6">Get in Touch</h2>
                         <p className="text-slate-300 mb-6 leading-relaxed">
                             Have a question about SyncSpace? Want to discuss partnership opportunities?
@@ -82,7 +82,7 @@ const ContactPage = () => {
                     </div>
 
                     {/* Contact Form Section */}
-                    <div className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700">
+                    <div className="card p-8">
                         <h2 className="text-2xl font-bold text-indigo-400 mb-6">Send Us a Message</h2>
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
@@ -110,7 +110,7 @@ const ContactPage = () => {
                                 ></textarea>
                             </div>
                             <div>
-                                <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center">
                                     {loading ? 'Sending...' : 'Send Message'}
                                 </button>
                             </div>

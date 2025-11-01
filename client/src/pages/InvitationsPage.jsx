@@ -21,10 +21,12 @@ const InvitationsPage = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+            // If not authenticated, don't redirect — render an empty/public view instead
             if (!currentUser || !currentUser.token) {
-                setError('Authentication required.');
+                setError('');
+                setOwnedProjects([]);
+                setInvitedProjects([]);
                 setLoading(false);
-                navigate('/login'); // Redirect if not authenticated
                 return;
             }
             setLoading(true);
@@ -57,15 +59,19 @@ const InvitationsPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
-            <header className="mb-8 flex justify-between items-center">
+            <header className="mb-8 flex justify-between items-center bg-transparent">
                 <div>
-                     <Link to="/" className="text-indigo-400 hover:underline mb-2 block">&larr; Back to Homepage</Link>
-                     <h1 className="text-3xl font-bold text-white">Invitations</h1>
+                     <Link to="/" className="text-indigo-400 hover:underline mb-2 hidden md:block">&larr; Back to Homepage</Link>
+                     <h1 className="text-3xl font-bold text-white bg-transparent">Invitations</h1>
                  </div>
-                 <div className="flex items-center space-x-4">
-                      <span className="text-slate-300">Hi, {currentUser?.user?.username || 'User'}!</span>
-                      <button onClick={logout} className="text-red-500 hover:underline">Logout</button>
-                 </div>
+                                 <div className="flex items-center space-x-4">
+                                            {currentUser ? null : (
+                                                <>
+                                                    <Link to="/login" className="text-indigo-400 hover:underline">Login</Link>
+                                                    <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded">Sign up</Link>
+                                                </>
+                                            )}
+                                 </div>
             </header>
 
             {/* Tab Navigation */}

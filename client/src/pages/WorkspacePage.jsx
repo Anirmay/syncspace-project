@@ -259,37 +259,36 @@
                                  <>
                                      {/* Show Start Task if todo OR inprogress */}
                                      {(!task.status || task.status === 'todo' || task.status === 'inprogress') && (
-                                         <button onClick={handleStartClick} className="bg-green-600 hover:bg-green-700 text-white font-medium py-1.5 px-4 rounded text-sm">
+                                         <button onClick={handleStartClick} className="btn-primary">
                                              Start Task
                                          </button>
                                      )}
                                      
                                      {/* --- ADDED "SHOW TASK" BUTTON FOR DONE TASKS (RUNNING PROJECT) --- */}
-                                     {task.status === 'done' && (
-                                          <button onClick={handleStartClick} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded text-sm">
-                                             Show Task
-                                          </button>
-                                     )}
+                                                 {task.status === 'done' && (
+                                                        <button onClick={handleStartClick} className="btn-show">
+                                                            Show Task
+                                                        </button>
+                                                 )}
                                      {/* --- END OF ADDITION --- */}
                                      
                                      {/* Show "Complete Task" button only if status is 'inprogress' */}
-                                     {task.status === 'inprogress' && (
-                                         <button onClick={handleCompleteClick} className="bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-1.5 px-4 rounded text-sm flex items-center">
-                                             <CheckIcon /> Complete Task
+                                         {task.status === 'inprogress' && (
+                                         <button onClick={handleCompleteClick} className="btn-success">
+                                             Complete Task
                                          </button>
                                      )}
                                      
-                                     <button onClick={handleEditClick} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded text-sm">Edit Task</button>
+                                     <button onClick={handleEditClick} className="btn-edit">Edit Task</button>
                                      
                                      {/* Show "Reopen Task" button only if status is 'done' */}
                                      {task.status === 'done' && (
-                                         <button onClick={handleReopenClick} className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-1.5 px-4 rounded text-sm">
+                                         <button onClick={handleReopenClick} className="btn-warning">
                                              Reopen Task
                                          </button>
                                      )}
-                                     {task.status === 'done' && <button className="bg-slate-600 hover:bg-slate-500 text-white font-medium py-1.5 px-4 rounded text-sm disabled:opacity-50" disabled>Download Files</button>}
                                      
-                                     <button onClick={handleDeleteClick} className="bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white font-medium py-1.5 px-4 rounded text-sm">Delete Task</button>
+                                     <button onClick={handleDeleteClick} className="btn-danger">Delete Task</button>
                                  </>
                              )}
                          </div>
@@ -345,7 +344,7 @@
                      type="button"
                      onClick={onConfirm}
                      disabled={isDeleting}
-                     className="bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 w-36" // Added fixed width for consistency
+                     className="btn-danger-deep w-36 disabled:opacity-50"
                  >
                      {isDeleting ? (
                           <> <Spinner small={true} /> Deleting... </> // Use small spinner
@@ -383,13 +382,13 @@
          onConfirmDelete(task); 
      };
  
-     return (
-         <div
-             ref={setNodeRef} style={style} {...attributes} {...listeners}
-             onClick={() => onTaskClick(task)}
-             // --- MODIFIED: Change cursor if archived ---
-             className={`bg-slate-700 p-3 rounded shadow text-sm text-slate-200 hover:bg-slate-600 border border-slate-600 mb-3 touch-none relative ${isArchived ? 'cursor-not-allowed' : 'cursor-grab'}`} 
-         >
+    return (
+        <div
+            ref={setNodeRef} style={style} {...attributes} {...listeners}
+            onClick={() => onTaskClick(task)}
+            // --- MODIFIED: Use .card and group for hover polish; change cursor if archived ---
+            className={`card group p-3 rounded text-sm text-slate-200 mb-3 relative ${isArchived ? 'cursor-not-allowed opacity-70' : 'cursor-grab'}`} 
+        >
              
              {/* --- MODIFIED: Hide delete button if archived --- */}
              {!isArchived && (
@@ -397,7 +396,7 @@
                      onClick={handleDeleteClick}
                      onMouseDownCapture={(e) => e.stopPropagation()} 
                      onTouchStartCapture={(e) => e.stopPropagation()} 
-                     className="absolute top-2 right-2 p-1 text-slate-500 hover:text-red-400 rounded-full hover:bg-slate-600 transition-colors z-10"
+                     className="task-delete-btn absolute top-2 right-2 p-1 text-slate-500 hover:text-red-400 rounded-full hover:bg-slate-600 transition-colors z-10"
                      aria-label="Delete task"
                  >
                      <TrashIcon small={true} />
@@ -413,11 +412,19 @@
  };
  
  // --- ADDED isArchived PROP ---
- const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDeleteTask, isOver, isArchived }) => {
+const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDeleteTask, isOver, isArchived }) => {
      const taskIds = tasks.map(task => task._id);
+
+    // Determine a semantic class for column type so we can style borders per column.
+    // Be permissive: column titles may be "To Do (0)", "To Do", "Todo", etc.
+    const lc = (column?.name || '').toLowerCase().trim();
+    let colTypeClass = 'col-default';
+    if (lc.includes('to do') || lc.includes('todo') || /^to\b/.test(lc)) colTypeClass = 'col-todo';
+    else if (lc.includes('in progress') || lc.includes('progress')) colTypeClass = 'col-inprogress';
+    else if (lc.includes('done') || lc.includes('completed')) colTypeClass = 'col-done';
  
-     return (
-         <div className={`bg-slate-800 p-3 rounded-md w-72 flex-shrink-0 border border-slate-700 flex flex-col transition-colors duration-200 ease-in-out ${isOver ? 'bg-indigo-900/40 border-indigo-600 ring-1 ring-indigo-600' : ''}`}>
+    return (
+        <div className={`card p-3 rounded-md w-72 flex-shrink-0 flex flex-col transition-colors duration-200 ease-in-out ${isOver ? 'ring-1 ring-indigo-600 border-indigo-600' : ''} ${colTypeClass}`}>
              <h4 className="font-semibold text-slate-300 mb-4 px-1 flex-shrink-0">{column.name} ({tasks.length})</h4>
  
              {/* --- MODIFIED: Hide Add Task if archived --- */}
@@ -473,8 +480,8 @@
      }, {}), [board.columns, filteredTasks]);
  
  
-     return (
-         <div className="bg-slate-700/50 p-4 rounded-lg shadow mb-6 border border-slate-600">
+    return (
+        <div className="card no-lift p-4 mb-6">
              <div className="flex justify-between items-center mb-4 px-2">
                  <h3 className="text-xl font-semibold text-white">{board.title}</h3>
              </div>
@@ -1542,13 +1549,13 @@
      };
      // --- END NEW HANDLERS ---
  
-     // --- Render Logic ---
-     return (
-         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
-              <header className="mb-8 flex flex-wrap justify-between items-start gap-y-4">
+    // --- Render Logic ---
+    return (
+        <div className={`min-h-screen bg-slate-900 text-white p-8 font-inter ${workspaceChatOpen ? 'chat-open' : ''}`}>
+            <header className="mb-8 flex flex-wrap justify-between items-start gap-y-4 bg-transparent">
                    <div className="flex flex-col gap-1">
-                        <Link to="/dashboard" className="text-indigo-400 hover:underline text-sm mb-1">&larr; Back to Workspaces</Link>
-                        <h1 className="text-3xl font-bold text-white">
+                        <Link to="/dashboard" className="text-indigo-400 hover:underline text-sm mb-1 hidden md:block">&larr; Back to Workspaces</Link>
+                    <h1 className="text-3xl font-bold text-white bg-transparent">
                              {/* Show loading state or workspace name */}
                              {loading ? 'Loading...' : (workspace ? workspace.name : 'Workspace')}
                         </h1>
@@ -1557,12 +1564,14 @@
                    </div>
                    <div className="flex flex-col items-end gap-y-2"> {/* CHANGED: Made this a flex-col aligned to the end */}
                        {/* Wrapped user info and logout in their own div */}
-                       <div className="flex items-center space-x-4">
-                            {/* Use optional chaining for username */}
-                            <span className="text-slate-300 text-sm">Hi, {currentUser?.user?.username || 'User'}!</span>
-                            {/* Ensure logout function exists */}
-                            {logout && <button onClick={logout} className="text-indigo-400 hover:underline text-sm">Logout</button>}
-                       </div>
+                                             <div className="flex items-center space-x-4">
+                                                        {currentUser ? null : (
+                                                            <>
+                                                                <Link to="/login" className="text-indigo-400 hover:underline">Login</Link>
+                                                                <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded">Sign up</Link>
+                                                            </>
+                                                        )}
+                                             </div>
                        
                        {/* --- NEW DELETE WORKSPACE BUTTON --- */}
                        {/* Show only if workspace is loaded and user is owner */}

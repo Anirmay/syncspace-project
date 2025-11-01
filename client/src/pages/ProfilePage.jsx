@@ -205,7 +205,7 @@ const ProfilePage = () => {
         {/* Back Link */}
         {!isEditing && (
              <div className="mt-8 text-center">
-              <Link to="/" className="text-indigo-400 hover:text-indigo-300 transition-colors">&larr; Back to Home</Link>
+              <Link to="/" className="text-indigo-400 hover:text-indigo-300 transition-colors hidden md:block">&larr; Back to Home</Link>
             </div>
         )}
       </div>

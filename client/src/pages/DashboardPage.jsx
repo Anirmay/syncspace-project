@@ -13,25 +13,25 @@ const Spinner = () => (
 // Component to Display List of Workspaces
 const WorkspaceList = ({ title, workspaces, loading, error, onUpdateStatus }) => {
     if (workspaces.length === 0) {
-        return <p className="text-slate-400 text-sm italic px-6 pb-4">{`No ${title.toLowerCase()} yet.`}</p>;
+        return <p className="text-slate-500 text-sm italic px-6 pb-4">{`No ${title.toLowerCase()} yet.`}</p>;
     }
 
     return (
         <div className="space-y-4 px-6 pb-6">
             {workspaces.map((ws) => (
-                <div key={ws._id} className="p-6 bg-slate-700 rounded-lg shadow hover:bg-slate-600 transition-colors border border-slate-600 flex justify-between items-center">
+                <div key={ws._id} className="p-6 card flex justify-between items-center">
                     <Link to={`/workspace/${ws._id}`} className="flex-grow mr-4 group"> {/* Added group */}
-                        <h3 className="text-xl font-semibold text-white group-hover:text-indigo-300 transition-colors">{ws.name}</h3> {/* Added hover effect */}
-                        <p className="text-sm text-slate-400 mt-1">Owner: {ws.owner?.username || 'Unknown'}</p>
-                        <p className="text-xs text-slate-500 mt-2">Created: {new Date(ws.createdAt).toLocaleDateString()}</p>
+                        <h3 className="text-xl font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">{ws.name}</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Owner: {ws.owner?.username || 'Unknown'}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Created: {new Date(ws.createdAt).toLocaleDateString()}</p>
                     </Link>
                     <button
                         onClick={() => onUpdateStatus(ws._id, ws.status === 'active' ? 'archived' : 'active')}
-                        className={`text-xs font-medium py-1 px-3 rounded ${
+                        className={`text-xs font-medium py-1 px-3 rounded-full ${
                             ws.status === 'active'
-                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
-                        } transition-colors`}
+                            ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                            : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        } transition-colors shadow-sm`}
                         title={ws.status === 'active' ? 'Mark as Done (Archive)' : 'Reactivate Project'}
                     >
                         {ws.status === 'active' ? 'Archive' : 'Reactivate'}
@@ -61,8 +61,8 @@ const CreateWorkspaceForm = ({ onWorkspaceCreated }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-6 bg-slate-700 rounded-lg shadow border border-slate-600 mb-8">
-            <h3 className="text-lg font-semibold text-white mb-3">Create New Workspace</h3>
+        <form onSubmit={handleSubmit} className="card p-6 mb-8">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Create New Workspace</h3>
             <div className="flex flex-col sm:flex-row gap-3">
                 <input
                     type="text"
@@ -70,11 +70,11 @@ const CreateWorkspaceForm = ({ onWorkspaceCreated }) => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter workspace name"
                     required
-                    className="flex-grow bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white placeholder-slate-400"
+                    className="flex-grow bg-slate-100 dark:bg-slate-800 rounded p-3 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400"
                 />
                 <button
                     type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-primary"
                 >
                     Next 
                 </button>
@@ -94,12 +94,12 @@ const DashboardPage = () => {
 
     // Function to fetch workspaces
     const fetchWorkspaces = async () => {
-         if (!currentUser || !currentUser.token) { 
-             setError('Authentication error. Please log in.'); 
-             setLoading(false); 
-             // Optional: Redirect to login
-             // navigate('/login'); 
-             return; 
+         // If there's no logged-in user, don't redirect — show public/empty state instead
+         if (!currentUser || !currentUser.token) {
+             setError('');
+             setWorkspaces([]);
+             setLoading(false);
+             return;
          }
          setLoading(true); 
          setError('');
@@ -109,7 +109,7 @@ const DashboardPage = () => {
              const response = await axios.get('http://localhost:5000/api/workspaces/my', config); 
              // --- END FIX ---
              setWorkspaces(response.data);
-         } catch (err) {
+            } catch (err) {
              setError(err.response?.data?.message || 'Failed to fetch workspaces.'); 
              console.error("Fetch workspaces error:", err);
              // Handle auth errors specifically
@@ -160,15 +160,18 @@ const DashboardPage = () => {
     const archivedWorkspaces = workspaces.filter(ws => ws.status === 'archived');
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
-              <Link to="/" className="text-indigo-400 hover:underline mb-4 block">&larr; Back to Homepage</Link>
-              <header className="mb-8 flex flex-wrap justify-between items-center gap-4"> {/* Added flex-wrap and gap */}
-                  <h1 className="text-3xl font-bold text-white">Your Workspaces</h1>
-                  <div className="flex items-center space-x-4"> {/* Grouped user info/actions */}
-                      <span className="text-slate-300">Hi, {currentUser?.user?.username || 'User'}!</span>
-                      <Link to="/profile" className="text-indigo-400 hover:underline">Profile</Link>
-                      <button onClick={logout} className="text-red-500 hover:underline">Logout</button>
-                  </div>
+        <div className="min-h-screen font-inter bg-white text-slate-900 dark:bg-slate-900 dark:text-white p-8">
+              <Link to="/" className="text-indigo-400 hover:underline mb-4 hidden md:block">&larr; Back to Homepage</Link>
+              <header className="mb-8 flex flex-wrap justify-between items-center gap-4 bg-transparent"> {/* header */}
+                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Your Workspaces</h1>
+                                <div className="flex items-center space-x-4"> {/* Grouped user info/actions */}
+                                    {currentUser ? null : (
+                                        <>
+                                            <Link to="/login" className="text-indigo-600 dark:text-indigo-300 hover:underline">Login</Link>
+                                            <Link to="/register" className="btn-primary">Sign up</Link>
+                                        </>
+                                    )}
+                                </div>
               </header>
 
             <div className="mb-10 px-0 sm:px-6"> {/* Adjusted padding */}
@@ -182,7 +185,7 @@ const DashboardPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4 px-6 border-b border-slate-700 pb-2">
+                        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4 px-6 border-b border-slate-200 dark:border-slate-700 pb-2">
                             Running Projects ({activeWorkspaces.length})
                         </h2>
                         <WorkspaceList
@@ -195,7 +198,7 @@ const DashboardPage = () => {
                     </section>
 
                     <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4 px-6 border-b border-slate-700 pb-2">
+                        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-4 px-6 border-b border-slate-200 dark:border-slate-700 pb-2">
                             Done Projects ({archivedWorkspaces.length})
                         </h2>
                          <WorkspaceList

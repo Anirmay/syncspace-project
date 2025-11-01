@@ -271,9 +271,9 @@ const ManageInvitesPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
-            <header className="mb-8">
-                <Link to="/invitations" className="text-indigo-400 hover:underline mb-2 block">&larr; Back to Invitations</Link>
-                <h1 className="text-3xl font-bold text-white">Manage Invites: {workspace?.name || 'Loading...'}</h1>
+            <header className="mb-8 bg-transparent">
+                <Link to="/invitations" className="text-indigo-400 hover:underline mb-2 hidden md:block">&larr; Back to Invitations</Link>
+                <h1 className="text-3xl font-bold text-white bg-transparent">Manage Invites: {workspace?.name || 'Loading...'}</h1>
             </header>
 
             {/* Remove member confirmation modal */}

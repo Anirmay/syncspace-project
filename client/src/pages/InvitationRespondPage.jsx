@@ -64,7 +64,7 @@ const InvitationRespondPage = () => {
     <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
       <header className="mb-8 flex justify-between items-start">
         <div>
-          <Link to="/" className="text-indigo-400 hover:underline mb-2 block">&larr; Back to Homepage</Link>
+          <Link to="/" className="text-indigo-400 hover:underline mb-2 hidden md:block">&larr; Back to Homepage</Link>
           <h1 className="text-3xl font-bold text-white">Invitation</h1>
         </div>
       </header>

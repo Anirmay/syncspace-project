@@ -30,6 +30,7 @@
     const AccountSettingsPage = () => {
         // ADD currentUser to get the token
         const { logout, currentUser } = useContext(AuthContext);
+        const [showLogoutModal, setShowLogoutModal] = useState(false);
         const navigate = useNavigate();
         const [notificationsEnabled, setNotificationsEnabled] = useState(true);
         const [webNotificationsEnabled, setWebNotificationsEnabled] = useState(true);
@@ -53,8 +54,8 @@
         };
 
         const handleLogout = () => {
-            logout();
-            navigate('/');
+            // Open the confirmation modal instead of logging out immediately
+            setShowLogoutModal(true);
         };
 
         // Delete account confirmation modal
@@ -282,6 +283,20 @@
                     </div>
                 )}
 
+                {/* Logout confirmation modal */}
+                {showLogoutModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div role="dialog" aria-modal="true" aria-labelledby="logout-confirm-title" className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-md w-full p-6">
+                            <h3 id="logout-confirm-title" className="text-lg font-semibold text-slate-900 dark:text-white">Confirm logout</h3>
+                            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Are you sure you want to log out?</p>
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded">Cancel</button>
+                                <button onClick={() => { setShowLogoutModal(false); logout(); navigate('/'); }} className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="container mx-auto max-w-2xl bg-slate-800 rounded-lg shadow-xl p-8 border border-slate-700">
                     <h1 className="text-3xl font-bold mb-8 text-center text-indigo-400">Account Settings</h1>
                     <div className="space-y-6">
@@ -345,7 +360,7 @@
                         </div>
                     </div>
                     <div className="mt-8 text-center">
-                        <Link to="/" className="text-indigo-400 hover:text-indigo-300 transition-colors">&larr; Back to Home</Link>
+                        <Link to="/" className="text-indigo-400 hover:text-indigo-300 transition-colors hidden md:inline-block">&larr; Back to Home</Link>
                     </div>
                 </div>
             </div>

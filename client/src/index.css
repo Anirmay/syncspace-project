@@ -101,6 +101,24 @@ html {
   color: var(--ss-text) !important;
 }
 
+/* Prevent a full-width pale panel appearing directly under page titles.
+   Targets headers that are immediate children of the main page container
+   in light mode so page headings remain on the page background and do
+   not get the panel color applied. This is intentionally conservative. */
+:root:not(.dark) .min-h-screen > header {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Also clear backgrounds for any page headers that are nested inside a container
+   (e.g. About / Contact pages use a container wrapper). This is a narrow rule
+   scoped to light mode only and uses the `page-header` class we added in the
+   page components. */
+:root:not(.dark) .page-header {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* Header links and logo */
 :root:not(.dark) header a,
 :root:not(.dark) header .text-2xl,
@@ -133,6 +151,25 @@ html {
 :root:not(.dark) .border-slate-500 {
   border-color: var(--ss-border) !important;
 }
+
+/* Make light-mode standard borders slightly darker so boxed panels are visible on white backgrounds */
+:root:not(.dark) .border-slate-200,
+:root:not(.dark) .rounded-xl.border,
+:root:not(.dark) .p-6.rounded-lg.border,
+:root:not(.dark) .card {
+  border-color: rgba(15,23,42,0.06) !important; /* subtle slate-800 tint */
+}
+
+/* Column-specific border accents for Kanban columns (To Do / In Progress / Done)
+   These give each column a faint colored border + subtle shadow to make them
+   identifiable in both light and dark themes. Tints are intentionally soft. */
+:root:not(.dark) .col-todo { border-color: rgba(99,102,241,0.12) !important; box-shadow: 0 6px 24px rgba(99,102,241,0.03); }
+:root:not(.dark) .col-inprogress { border-color: rgba(168,85,247,0.10) !important; box-shadow: 0 6px 24px rgba(168,85,247,0.03); }
+:root:not(.dark) .col-done { border-color: rgba(6,182,212,0.10) !important; box-shadow: 0 6px 24px rgba(6,182,212,0.03); }
+
+.dark .col-todo { border-color: rgba(124,58,237,0.18) !important; box-shadow: 0 8px 28px rgba(79,70,229,0.06); }
+.dark .col-inprogress { border-color: rgba(168,85,247,0.18) !important; box-shadow: 0 8px 28px rgba(168,85,247,0.06); }
+.dark .col-done { border-color: rgba(6,182,212,0.18) !important; box-shadow: 0 8px 28px rgba(6,182,212,0.06); }
 
 /* CTA hero: replace the strong purple gradient with a softer theme-matching gradient */
 :root:not(.dark) .container .relative.bg-gradient-to-r.from-indigo-600.to-indigo-800 {
@@ -195,3 +232,128 @@ html {
 
 /* Slightly reduce the default top padding for main hero areas when global header exists */
 main.relative { padding-top: 4rem !important; }
+
+/* -----------------------------
+   Modern theme variables & styles
+   - Adds a colorful, modern look for both light and dark themes
+   - Scoped and non-invasive: uses variables and a few helper selectors
+   ----------------------------- */
+
+:root {
+  /* Light mode palette */
+  --page-bg: #f6fbff; /* soft azure */
+  --panel-bg: #ffffff; /* card background */
+  --muted-panel: #f7fbff; /* subtle panel */
+  --text: #071127; /* near-black */
+  --muted: #64748b;
+  --accent-from: #7c3aed; /* purple */
+  --accent-to: #06b6d4; /* teal */
+  --accent: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+  --card-shadow: 0 10px 30px rgba(124,58,237,0.06);
+}
+
+.dark {
+  /* Dark mode palette overrides */
+  --page-bg: #0b1220;
+  --panel-bg: #0f1724;
+  --muted-panel: #071021;
+  --text: #e6eefb;
+  --muted: #94a3b8;
+  --accent-from: #8b5cf6;
+  --accent-to: #06b6d4;
+  --accent: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+  --card-shadow: 0 8px 24px rgba(2,6,23,0.6);
+}
+
+/* Apply page background and base text colors */
+body, .min-h-screen { background: var(--page-bg) !important; color: var(--text) !important; }
+
+/* Modern container: gentle padding and max-width handled elsewhere */
+.container { padding-left: 1rem; padding-right: 1rem; }
+
+/* Cards / panels */
+.card, .panel, .bg-panel { background: var(--panel-bg) !important; border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid rgba(11,18,32,0.04); }
+.card-sm { padding: 1rem; }
+.card-lg { padding: 2rem; }
+
+/* Hover / interactive polish for cards, buttons and inputs */
+.card { transition: transform 180ms ease, box-shadow 180ms ease; }
+.card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(2,6,23,0.08); }
+
+.btn-primary { transition: transform 180ms ease, box-shadow 180ms ease, opacity 120ms ease; }
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(2,6,23,0.12); }
+
+input[type="text"], input[type="email"], input[type="password"], textarea, select {
+  transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+input[type="text"]:hover, textarea:hover, select:hover {
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+}
+input[type="text"]:focus, textarea:focus, select:focus {
+  box-shadow: 0 8px 26px rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.45);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+/* Opt-out class: prevents the global .card hover lift when applied */
+.card.no-lift:hover {
+  transform: none !important;
+  box-shadow: var(--card-shadow) !important; /* keep the normal card shadow but do not lift */
+}
+
+/* When the project chat overlay is open, hide task delete buttons to avoid
+   overlapping icons showing under the modal (especially on mobile). */
+.chat-open .task-delete-btn {
+  display: none !important;
+}
+
+/* Hero headline decoration */
+.hero-title { font-weight: 800; letter-spacing: -0.02em; }
+.hero-subtle { background: var(--accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Primary CTA */
+.btn-primary { background: var(--accent-from); background-image: var(--accent); color: white; padding: 0.6rem 1.2rem; border-radius: 9999px; box-shadow: 0 12px 30px rgba(99,102,241,0.12); display: inline-block; }
+.btn-primary:hover { transform: translateY(-2px); }
+
+/* Additional themed button variants used in modals and actions */
+.btn-success { background: linear-gradient(90deg,#10b981,#059669); color: white; padding: 0.5rem 0.95rem; border-radius: 9999px; box-shadow: 0 10px 26px rgba(6,95,70,0.12); display:inline-block; }
+.btn-success:hover { transform: translateY(-2px); }
+
+.btn-danger { background: linear-gradient(90deg,#ef4444,#dc2626); color: white; padding: 0.5rem 0.95rem; border-radius: 9999px; box-shadow: 0 10px 26px rgba(139,0,0,0.12); display:inline-block; }
+.btn-danger:hover { transform: translateY(-2px); }
+
+/* Deeper danger button for workspace-level destructive actions */
+.btn-danger-deep { background: linear-gradient(90deg,#b91c1c,#991b1b); color: white; padding: 0.6rem 1rem; border-radius: 12px; box-shadow: 0 16px 40px rgba(185,28,28,0.18); display:inline-flex; align-items:center; justify-content:center; }
+.btn-danger-deep:hover { transform: translateY(-2px); }
+
+.btn-warning { background: linear-gradient(90deg,#f59e0b,#f97316); color: white; padding: 0.5rem 0.95rem; border-radius: 9999px; box-shadow: 0 10px 26px rgba(153,85,0,0.08); display:inline-block; }
+.btn-warning:hover { transform: translateY(-2px); }
+
+.btn-secondary { background: transparent; border: 1px solid rgba(11,18,32,0.06); color: var(--text); padding: 0.45rem 0.9rem; border-radius: 9999px; display:inline-block; }
+.btn-secondary:hover { background: rgba(11,18,32,0.03); transform: translateY(-1px); }
+
+/* Edit and Show button variants */
+.btn-edit { background: linear-gradient(90deg,#7c3aed,#5b21b6); color: white; padding: 0.5rem 0.95rem; border-radius: 9999px; box-shadow: 0 10px 26px rgba(92,64,183,0.12); display:inline-block; }
+.btn-edit:hover { transform: translateY(-2px); }
+
+.btn-show { background: linear-gradient(90deg,#06b6d4,#0ea5a0); color: white; padding: 0.5rem 0.95rem; border-radius: 9999px; box-shadow: 0 10px 26px rgba(6,182,212,0.12); display:inline-block; }
+.btn-show:hover { transform: translateY(-2px); }
+
+/* Secondary links */
+.muted-link { color: var(--muted); }
+
+/* Feature icon circles */
+.icon-circle { width: 56px; height: 56px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; }
+
+/* Testimonials */
+.testimonial { background: var(--panel-bg); border-radius: 12px; padding: 1.25rem; box-shadow: var(--card-shadow); }
+
+/* Footer subtle */
+footer { color: var(--muted); }
+
+/* Utility: subtle accent underline for headings */
+.heading-accent { position: relative; display: inline-block; }
+.heading-accent:after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); bottom: -0.6rem; width: 48px; height: 6px; border-radius: 6px; background: var(--accent); opacity: 0.18; }
+
+/* Make sure our new utilities don't clash with Tailwind's specificity in most cases. */
