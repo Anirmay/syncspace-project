@@ -156,15 +156,15 @@ const HomePage = () => {
     <section className="py-16">
           <div className="container mx-auto px-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+              <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-105 cursor-pointer">
             <h4 className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-300 mb-2">10k+</h4>
             <p className="text-slate-600 dark:text-slate-300 flex items-center justify-center"><UsersIcon /> Active Users</p>
           </div>
-          <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+              <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-105 cursor-pointer">
             <h4 className="text-3xl font-extrabold text-teal-600 dark:text-teal-300 mb-2">500+</h4>
             <p className="text-slate-600 dark:text-slate-300 flex items-center justify-center"><FolderIcon /> Workspaces Created</p>
           </div>
-          <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+              <div className="p-6 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-105 cursor-pointer">
             <h4 className="text-3xl font-extrabold text-pink-600 dark:text-pink-300 mb-2">99.9%</h4>
             <p className="text-slate-600 dark:text-slate-300 flex items-center justify-center"><ClockIcon /> Uptime Guarantee</p>
           </div>
@@ -178,17 +178,17 @@ const HomePage = () => {
            <h3 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need in One Place</h3>
            <p className="text-slate-400 max-w-xl mx-auto mb-16">Stop switching between apps. SyncSpace brings your entire workflow into one unified hub.</p>
            <div className="grid md:grid-cols-3 gap-8">
-             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl hover:scale-105 cursor-pointer">
                <div className="inline-block p-4 rounded-full mb-6 bg-gradient-to-br from-indigo-500 to-teal-400 text-white"><KanbanIcon /></div>
                <h4 className="text-xl font-bold mb-2">Dynamic Kanban Boards</h4>
                <p className="text-slate-600 dark:text-slate-300">Visualize your workflow with interactive, drag-and-drop task boards for effortless project management.</p>
              </div>
-             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl hover:scale-105 cursor-pointer">
                <div className="inline-block p-4 rounded-full mb-6 bg-gradient-to-br from-pink-500 to-indigo-500 text-white"><DocIcon /></div>
                <h4 className="text-xl font-bold mb-2">Real-time Document Editor</h4>
                <p className="text-slate-600 dark:text-slate-300">Collaborate on documents simultaneously, ensuring everyone is always on the same page.</p>
              </div>
-             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+             <div className="p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl hover:scale-105 cursor-pointer">
                <div className="inline-block p-4 rounded-full mb-6 bg-gradient-to-br from-sky-500 to-indigo-500 text-white"><ChatIcon /></div>
                <h4 className="text-xl font-bold mb-2">Integrated Chat</h4>
                <p className="text-slate-600 dark:text-slate-300">Communicate in real-time with dedicated chat channels for each workspace, keeping conversations organized.</p>
@@ -202,7 +202,7 @@ const HomePage = () => {
         <div className="container mx-auto px-6">
           <h3 className="text-3xl md:text-4xl font-bold text-center mb-16">What Our Users Say</h3>
           <div className="grid lg:grid-cols-3 gap-8">
-            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-105 cursor-pointer">
               <div className="flex items-start gap-4"><div className="p-3 rounded-full bg-indigo-50 dark:bg-indigo-900"><QuoteIcon /></div><div className="flex-1">
               <p className="text-lg text-slate-700 dark:text-slate-300 italic my-6">"SyncSpace has revolutionized how our team works and saved us hours every week."</p>
               <div className="flex items-center">
@@ -210,7 +210,7 @@ const HomePage = () => {
                 <div><h5 className="font-bold text-slate-900 dark:text-white">Sarah Adams</h5><p className="text-sm text-slate-500 dark:text-slate-400">Project Manager, FutureTech</p></div>
               </div></div></div>
             </div>
-            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-105 cursor-pointer">
               <div className="flex items-start gap-4"><div className="p-3 rounded-full bg-teal-50 dark:bg-teal-900"><QuoteIcon /></div><div className="flex-1">
               <p className="text-lg text-slate-700 dark:text-slate-300 italic my-6">"Having tasks, docs, and chat in one place is a true game-changer."</p>
               <div className="flex items-center">
@@ -218,7 +218,7 @@ const HomePage = () => {
                 <div><h5 className="font-bold text-slate-900 dark:text-white">Mark Chen</h5><p className="text-sm text-slate-500 dark:text-slate-400">Lead Developer, Nova Solutions</p></div>
               </div></div></div>
             </div>
-            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-105 cursor-pointer">
               <div className="flex items-start gap-4"><div className="p-3 rounded-full bg-pink-50 dark:bg-pink-900"><QuoteIcon /></div><div className="flex-1">
               <p className="text-lg text-slate-700 dark:text-slate-300 italic my-6">"As a remote team, SyncSpace is our virtual office and keeps us connected."</p>
               <div className="flex items-center">
@@ -233,7 +233,7 @@ const HomePage = () => {
       {/* --- Final CTA Section --- */}
       <section className="py-24">
         <div className="container mx-auto px-6 text-center">
-          <div className="relative rounded-2xl p-12 overflow-hidden bg-gradient-to-r from-indigo-600 to-teal-400 text-white shadow-xl">
+          <div className="relative rounded-2xl p-12 overflow-hidden bg-gradient-to-r from-indigo-600 to-teal-400 text-white shadow-xl transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl">
             <h3 className="text-3xl md:text-4xl font-extrabold mb-4">Ready to Streamline Your Workflow?</h3>
             <p className="text-lg max-w-xl mx-auto mb-8">Join thousands of teams building their best work on SyncSpace. Get started for free—no credit card required.</p>
             <div className="flex items-center justify-center gap-4">

@@ -42,6 +42,7 @@ const CreateProjectDetailsPage = () => {
     const [fetchUsersError, setFetchUsersError] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
     // TODO: Add state for fetched user list for invites
 
     // Redirect back if no project name was passed (user accessed directly)
@@ -109,8 +110,15 @@ const CreateProjectDetailsPage = () => {
             const payload = { name: projectName, description: description, membersToInvite: selectedMemberIds };
             console.log("Submitting final project data:", payload);
 
-            await axios.post('http://localhost:5000/api/workspaces', payload, config);
-            navigate('/dashboard'); // Redirect on success
+            const res = await axios.post('http://localhost:5000/api/workspaces', payload, config);
+            // show top toast and then redirect to the created workspace
+            setToast({ show: true, msg: 'Project created successfully', type: 'success' });
+            const workspaceId = res.data?._id || res.data?.id;
+            setTimeout(() => {
+                setToast({ show: false, msg: '', type: 'success' });
+                if (workspaceId) navigate(`/workspace/${workspaceId}`);
+                else navigate('/dashboard');
+            }, 800);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create project.');
             console.error("Final create project error:", err);
@@ -121,6 +129,16 @@ const CreateProjectDetailsPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
+            {/* Top toast */}
+            <div className={`fixed left-0 right-0 top-4 flex justify-center pointer-events-none z-50`}>
+                <div className={`pointer-events-auto transform transition-transform duration-500 ease-out ${toast.show ? 'translate-y-0' : '-translate-y-full'}`}>
+                    {toast.show && (
+                        <div className={`px-4 py-2 rounded shadow-lg text-sm ${toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-500 text-white'}`}>
+                            {toast.msg}
+                        </div>
+                    )}
+                </div>
+            </div>
             <div className="container mx-auto max-w-2xl">
                 <header className="mb-8">
                      <Link to="/dashboard" className="text-indigo-400 hover:underline mb-4 hidden md:inline-block">&larr; Back to Workspaces</Link>

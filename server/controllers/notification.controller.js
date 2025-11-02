@@ -47,4 +47,17 @@ const markAllRead = async (req, res) => {
   }
 };
 
-export { getNotifications, markAsRead, markAllRead };
+// Mark direct message notifications from a specific actor as read
+const markDirectFromActor = async (req, res) => {
+  const { actorId } = req.params;
+  if (!actorId) return res.status(400).json({ message: 'Missing actor ID.' });
+  try {
+    await Notification.updateMany({ user: req.user._id, type: 'direct_message', actor: actorId, read: false }, { read: true });
+    res.status(200).json({ message: 'Direct message notifications from actor marked as read.' });
+  } catch (err) {
+    console.error('Error marking direct message notifications as read:', err);
+    res.status(500).json({ message: 'Server error marking direct message notifications.' });
+  }
+};
+
+export { getNotifications, markAsRead, markAllRead, markDirectFromActor };

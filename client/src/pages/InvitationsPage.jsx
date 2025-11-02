@@ -41,7 +41,9 @@ const InvitationsPage = () => {
                 ]);
 
                 setOwnedProjects(managedRes.data);
-                setInvitedProjects(pendingRes.data); // Data from /api/invitations/pending
+                // Filter out any pending invitations whose workspace was removed (stale invites)
+                const filtered = (pendingRes.data || []).filter(inv => inv && inv.workspace);
+                setInvitedProjects(filtered); // Data from /api/invitations/pending
 
             } catch (err) {
                 console.error("Error fetching invitation data:", err);
@@ -118,7 +120,7 @@ const InvitationsPage = () => {
                                             // This link goes to the page where you can manage invites *for* this project
                                             to={`/invitations/manage/${project._id}`} 
                                             key={project._id}
-                                            className="block p-4 bg-slate-800 rounded-lg shadow hover:bg-slate-700 transition-colors border border-slate-700"
+                                            className="block p-4 bg-slate-800 rounded-lg shadow hover:bg-slate-700 border border-slate-700 transform transition duration-300 hover:-translate-y-2 hover:scale-105 md:hover:scale-[1.03] hover:shadow-xl cursor-pointer"
                                         >
                                             <h3 className="font-medium text-white">{project.name}</h3>
                                             <p className="text-xs text-slate-400 mt-1">Owner: {project.owner?.username || 'N/A'}</p>
@@ -143,7 +145,7 @@ const InvitationsPage = () => {
                                             // This link goes to the page where you can accept/reject
                                             to={`/invitations/respond/${invite._id}`} 
                                             key={invite._id}
-                                            className="block p-4 bg-slate-800 rounded-lg shadow hover:bg-slate-700 transition-colors border border-slate-700"
+                                            className="block p-4 bg-slate-800 rounded-lg shadow hover:bg-slate-700 border border-slate-700 transform transition duration-300 hover:-translate-y-2 hover:scale-105 md:hover:scale-[1.03] hover:shadow-xl cursor-pointer"
                                         >
                                             <h3 className="font-medium text-white">{invite.workspace?.name || 'Unknown Project'}</h3>
                                             <p className="text-xs text-slate-400 mt-1">Invited by: {invite.inviter?.username || 'N/A'}</p>

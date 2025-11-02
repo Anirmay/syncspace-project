@@ -30,6 +30,12 @@ const Header = () => {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [chatUnreadTotal, setChatUnreadTotal] = useState(() => {
+    try {
+      const map = JSON.parse(localStorage.getItem('chatUnread') || '{}');
+      return Object.values(map).reduce((s, v) => s + (Number(v) || 0), 0);
+    } catch (e) { return 0; }
+  });
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef(null);
   const notificationsMobileRef = useRef(null);
@@ -56,6 +62,8 @@ const Header = () => {
     };
     fetchNotifications();
     intervalId = setInterval(fetchNotifications, 15000);
+  // Allow other parts of the app to trigger an immediate refetch (e.g., after marking direct-message notifs read)
+  window.addEventListener('server-notification-received', fetchNotifications);
     function handleClickOutside(e) {
       const insideNotifications = (notificationsRef.current && notificationsRef.current.contains(e.target)) || (notificationsMobileRef.current && notificationsMobileRef.current.contains(e.target));
       const insideAccount = (accountRef.current && accountRef.current.contains(e.target)) || (accountMobileRef.current && accountMobileRef.current.contains(e.target));
@@ -67,8 +75,36 @@ const Header = () => {
       if (!insideMobileMenu && !insideMobileMenuButton) setIsMobileMenuOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => { clearInterval(intervalId); document.removeEventListener('mousedown', handleClickOutside); };
+    return () => { clearInterval(intervalId); document.removeEventListener('mousedown', handleClickOutside); window.removeEventListener('server-notification-received', fetchNotifications); };
   }, [currentUser]);
+
+  // Listen for chat unread updates (from ChatPage writes or other tabs)
+  useEffect(() => {
+    const update = () => {
+      try {
+        const map = JSON.parse(localStorage.getItem('chatUnread') || '{}');
+        const totalLocal = Object.values(map).reduce((s, v) => s + (Number(v) || 0), 0);
+        // Also include server-side direct_message notifications (unread)
+        const serverDirectUnread = Array.isArray(notifications) ? notifications.filter(n => n.type === 'direct_message' && !n.read).length : 0;
+        setChatUnreadTotal(totalLocal + serverDirectUnread);
+      } catch (e) { setChatUnreadTotal(0); }
+    };
+    window.addEventListener('storage', update);
+    window.addEventListener('chat-unread-updated', update);
+    // initial
+    update();
+    return () => { window.removeEventListener('storage', update); window.removeEventListener('chat-unread-updated', update); };
+  }, []);
+
+  // Recompute chat unread total whenever server notifications change
+  useEffect(() => {
+    try {
+      const map = JSON.parse(localStorage.getItem('chatUnread') || '{}');
+      const totalLocal = Object.values(map).reduce((s, v) => s + (Number(v) || 0), 0);
+      const serverDirectUnread = Array.isArray(notifications) ? notifications.filter(n => n.type === 'direct_message' && !n.read).length : 0;
+      setChatUnreadTotal(totalLocal + serverDirectUnread);
+    } catch (e) { setChatUnreadTotal(0); }
+  }, [notifications]);
 
   // Keep document and localStorage in sync when toggling from header
   useEffect(() => {
@@ -251,11 +287,16 @@ const Header = () => {
                     </svg>
                   </div>
                 </button>
-                <Link to="/chat" className={iconClass('/chat')} aria-label="Chat"><ChatBubbleIcon /></Link>
+                <Link to="/chat" className={iconClass('/chat')} aria-label="Chat">
+                  <ChatBubbleIcon />
+                  {chatUnreadTotal > 0 && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-rose-500 rounded-full">{chatUnreadTotal > 99 ? '99+' : chatUnreadTotal}</span>
+                  )}
+                </Link>
                 <div className="relative" ref={notificationsRef}>
                   <button onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} className={iconButtonStyle} aria-label="Notifications"><BellIcon />
-                    {Array.isArray(notifications) && notifications.filter(n => !n.read).length > 0 && (
-                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">{notifications.filter(n => !n.read).length}</span>
+                    {Array.isArray(notifications) && notifications.filter(n => n.type !== 'direct_message' && !n.read).length > 0 && (
+                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">{notifications.filter(n => n.type !== 'direct_message' && !n.read).length}</span>
                     )}
                   </button>
                   <div className={`absolute right-0 mt-2 w-96 bg-slate-800 header-notifications rounded-md shadow-lg py-2 border border-slate-700 transition-all duration-150 origin-top-right ${isNotificationsOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
@@ -265,7 +306,7 @@ const Header = () => {
                     </div>
                     <div className="max-h-60 overflow-y-auto">
                       {(Array.isArray(notifications) && notifications.length === 0) && <div className="px-3 py-3 text-sm text-slate-400">No notifications</div>}
-                      {(Array.isArray(notifications) ? notifications.slice(0, 20) : []).map(n => (
+                      {(Array.isArray(notifications) ? notifications.filter(n => n.type !== 'direct_message').slice(0, 20) : []).map(n => (
                             <div key={n._id} onClick={(e) => { e.stopPropagation(); handleNotificationClick(n); setIsNotificationsOpen(false); }} className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 ${n.read ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
                               <div className="truncate">{n.message}</div>
                               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{new Date(n.createdAt).toLocaleString()}</div>
@@ -283,13 +324,9 @@ const Header = () => {
                   </button>
 
             <div className={`absolute right-0 mt-2 w-48 bg-slate-800 rounded-md shadow-lg py-1 border border-slate-700 transition-all duration-150 origin-top-right ${isAccountOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-              {!hideAccountActionsOn && (
-                <button onClick={() => { setIsAccountOpen(false); navigate('/profile'); }} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">User Profile</button>
-              )}
+              <button onClick={() => { setIsAccountOpen(false); navigate('/profile'); }} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">User Profile</button>
               <button onClick={() => { setIsAccountOpen(false); navigate('/account-settings'); }} className="block w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">Account Settings</button>
-              {!hideAccountActionsOn && (
-                <button onClick={() => { setIsAccountOpen(false); setShowLogoutModal(true); }} className="block w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700">Logout</button>
-              )}
+              <button onClick={() => { setIsAccountOpen(false); setShowLogoutModal(true); }} className="block w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700">Logout</button>
             </div>
                 </div>
               </>
@@ -307,8 +344,8 @@ const Header = () => {
                 {/* Notifications (mobile) */}
                 <div className="relative">
                   <button onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} className={iconButtonStyle} aria-label="Notifications (mobile)"><BellIcon />
-                    {Array.isArray(notifications) && notifications.filter(n => !n.read).length > 0 && (
-                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">{notifications.filter(n => !n.read).length}</span>
+                    {Array.isArray(notifications) && notifications.filter(n => n.type !== 'direct_message' && !n.read).length > 0 && (
+                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">{notifications.filter(n => n.type !== 'direct_message' && !n.read).length}</span>
                     )}
                   </button>
                   {/* Mobile notifications dropdown (narrower, anchored left) */}
@@ -319,7 +356,7 @@ const Header = () => {
                     </div>
                     <div className="max-h-60 overflow-y-auto">
                       {(Array.isArray(notifications) && notifications.length === 0) && <div className="px-3 py-3 text-sm text-slate-400">No notifications</div>}
-                      {(Array.isArray(notifications) ? notifications.slice(0, 20) : []).map(n => (
+                      {(Array.isArray(notifications) ? notifications.filter(n => n.type !== 'direct_message').slice(0, 20) : []).map(n => (
                         <div key={n._id} onClick={(e) => { e.stopPropagation(); handleNotificationClick(n); setIsNotificationsOpen(false); }} className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 ${n.read ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
                           <div className="truncate">{n.message}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{new Date(n.createdAt).toLocaleString()}</div>
@@ -330,7 +367,12 @@ const Header = () => {
                 </div>
 
                 {/* Chat icon */}
-                <Link to="/chat" className={iconClass('/chat')} aria-label="Chat (mobile)"><ChatBubbleIcon /></Link>
+                <Link to="/chat" className={iconClass('/chat')} aria-label="Chat (mobile)">
+                  <ChatBubbleIcon />
+                  {chatUnreadTotal > 0 && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-rose-500 rounded-full">{chatUnreadTotal > 99 ? '99+' : chatUnreadTotal}</span>
+                  )}
+                </Link>
               </>
             )}
 
@@ -365,13 +407,9 @@ const Header = () => {
                   {/* Mobile account dropdown (small box anchored to the avatar on the right) */}
                   <div ref={accountMobileRef} className={`fixed right-4 top-16 w-44 bg-white dark:bg-slate-800 rounded-md shadow-lg py-1 border border-slate-200 dark:border-slate-700 transition-all duration-150 origin-top md:hidden ${isAccountOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`} style={{ zIndex: 60 }}>
                     <div className="px-1 py-1">
-                      {!hideAccountActionsOn && (
-                        <button onClick={() => { setIsAccountOpen(false); navigate('/profile'); }} className="block w-full text-left px-4 py-3 text-sm text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700">User Profile</button>
-                      )}
+                      <button onClick={() => { setIsAccountOpen(false); navigate('/profile'); }} className="block w-full text-left px-4 py-3 text-sm text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700">User Profile</button>
                       <button onClick={() => { setIsAccountOpen(false); navigate('/account-settings'); }} className="block w-full text-left px-4 py-3 text-sm text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700">Account Settings</button>
-                      {!hideAccountActionsOn && (
-                        <button onClick={() => { setIsAccountOpen(false); setShowLogoutModal(true); }} className="block w-full text-left px-4 py-3 text-sm text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700">Logout</button>
-                      )}
+                      <button onClick={() => { setIsAccountOpen(false); setShowLogoutModal(true); }} className="block w-full text-left px-4 py-3 text-sm text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700">Logout</button>
                     </div>
                   </div>
                 </div>

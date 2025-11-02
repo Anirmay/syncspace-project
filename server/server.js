@@ -10,6 +10,7 @@ import workspaceRoutes from './routes/workspace.routes.js';
 import taskRoutes from './routes/task.routes.js';   // <-- NEW: Import task routes
 import contactRoutes from './routes/contact.routes.js';
 import messageRoutes from './routes/message.routes.js';
+import fileRoutes from './routes/file.routes.js';
 // --- NEW: Import invitation routes ---
 import invitationRoutes from './routes/invitation.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
@@ -37,6 +38,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/files', fileRoutes);
 
 // --- Database Connection ---
 const connectDB = async () => {

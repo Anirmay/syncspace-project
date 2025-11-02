@@ -10,6 +10,7 @@ const InvitationRespondPage = () => {
   const [invitation, setInvitation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [adminDeleted, setAdminDeleted] = useState(false);
   // Support different currentUser shapes
   const token = currentUser?.token || currentUser?.accessToken || currentUser?.user?.token;
 
@@ -22,7 +23,19 @@ const InvitationRespondPage = () => {
         setInvitation(res.data);
       } catch (err) {
         console.error('Error loading invitation:', err);
-        setError(err.response?.data?.message || 'Failed to load invitation.');
+        // If the invitation's workspace was removed by the admin, the server may return 404/410
+        // or occasionally return a 5xx with a message that indicates the workspace was deleted.
+        const status = err.response?.status;
+        const serverMsg = err.response?.data?.message || err.response?.data?.error || '';
+        const looksLikeWorkspaceDeleted = /workspace.*(not found|deleted|does not exist)|deleted.*workspace|not found/i.test(serverMsg);
+        // Treat 404/410 as deleted. Also treat 5xx as deleted when server message indicates so,
+        // or when the 5xx response has no usable message (common when server throws a raw error).
+        if (status === 404 || status === 410 || (status >= 500 && (looksLikeWorkspaceDeleted || !serverMsg))) {
+          setAdminDeleted(true);
+          setError('The project for this invitation was deleted by the admin.');
+        } else {
+          setError(serverMsg || 'Failed to load invitation.');
+        }
       } finally {
         setLoading(false);
       }
@@ -55,8 +68,10 @@ const InvitationRespondPage = () => {
   if (loading && !invitation) return <div className="min-h-screen bg-slate-900 text-white p-8">Loading...</div>;
   if (error && !invitation) return (
     <div className="min-h-screen bg-slate-900 text-white p-8">
-      <p className="text-red-500 mb-4">{error}</p>
-      <Link to="/invitations" className="text-sm text-indigo-400 hover:underline">Back to Invitations</Link>
+      <div className="mb-4">
+        <Link to="/invitations" className="text-indigo-400 hover:underline">&larr; Back to Invitation page</Link>
+      </div>
+      <p className="text-red-500">{error}</p>
     </div>
   );
 
@@ -70,7 +85,8 @@ const InvitationRespondPage = () => {
       </header>
 
       {invitation ? (
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 max-w-3xl">
+        (invitation.workspace ? (
+          <div className="bg-slate-800 rounded-lg border border-slate-700 p-6 max-w-3xl">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-white">Workspace: <span className="font-medium text-slate-300">{invitation.workspace?.name || 'Unknown'}</span></h2>
             <p className="text-sm text-slate-400 mt-1">Invited by: <span className="text-slate-300">{invitation.inviter?.username || 'A manager'}</span></p>
@@ -112,7 +128,16 @@ const InvitationRespondPage = () => {
           </div>
 
           {error && <p className="text-red-400 mt-4">{error}</p>}
-        </div>
+          </div>
+        ) : (
+          // If invitation exists but workspace was deleted, show a simple top-line message (not a boxed card)
+          <div className="mb-6">
+            <div className="mb-4">
+              <Link to="/invitations" className="text-indigo-400 hover:underline">&larr; Back to Invitation page</Link>
+            </div>
+            <p className="text-red-500">The project for this invitation was deleted by the admin.</p>
+          </div>
+        ))
       ) : (
         <p className="text-slate-400">No invitation found.</p>
       )}

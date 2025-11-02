@@ -10,6 +10,19 @@ import dotenv from 'dotenv'; // Needed for email invites
 
 dotenv.config(); // Load environment variables
 
+// Helper to configure Nodemailer (local copy to avoid circular imports)
+const setupTransporter = () => {
+    return nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '465', 10),
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+};
+
 // @desc    Create a new workspace
 // @route   POST /api/workspaces
 // @access  Private
@@ -287,6 +300,87 @@ const deleteWorkspace = async (req, res) => {
         // 3. Delete all boards in this workspace
         await Board.deleteMany({ workspace: workspaceId });
         console.log(`Deleted ${boardIds.length} boards.`);
+
+        // 3.b Notify all members (except the admin who deleted) that the workspace was removed
+        try {
+            // Collect recipient user IDs (members and owner) excluding the actor
+            const recipientIds = new Set();
+            if (workspace.members && Array.isArray(workspace.members)) {
+                workspace.members.forEach(m => {
+                    const uid = m.user?._id ? m.user._id.toString() : (m.user ? m.user.toString() : null);
+                    if (uid) recipientIds.add(uid);
+                });
+            }
+            if (workspace.owner) {
+                const ownerId = workspace.owner._id ? workspace.owner._id.toString() : (workspace.owner ? workspace.owner.toString() : null);
+                if (ownerId) recipientIds.add(ownerId);
+            }
+            // Remove the actor (admin who deleted)
+            recipientIds.delete(userId.toString());
+
+            // Prepare admin name for messages
+            let adminName = req.user?.username;
+            try {
+                if (!adminName) {
+                    const adminRec = await User.findById(userId).select('username email');
+                    adminName = adminRec?.username || adminRec?.email || 'A manager';
+                }
+            } catch (e) {
+                adminName = adminName || 'A manager';
+            }
+
+            if (recipientIds.size > 0) {
+                const transporter = setupTransporter();
+                for (const rid of Array.from(recipientIds)) {
+                    try {
+                        const userRec = await User.findById(rid).select('email webNotifications emailNotifications username');
+                        const displayName = userRec?.username || userRec?.email || 'User';
+
+                        // Create an in-app notification for registered users who accept web notifications
+                        try {
+                            if (!userRec || userRec.webNotifications !== false) {
+                                await Notification.create({
+                                    user: rid,
+                                    actor: userId,
+                                    type: 'workspace_deleted',
+                                    message: `${adminName} deleted the workspace "${workspace.name}" that you were a member of.`,
+                                    link: '/',
+                                });
+                            }
+                        } catch (notifErr) {
+                            console.error('Error creating workspace-deleted notification for', rid, notifErr);
+                        }
+
+                        // Send email if user allows email notifications
+                        try {
+                            if (userRec && userRec.email && userRec.emailNotifications !== false) {
+                                const mailOptions = {
+                                    from: `"SyncSpace Notifications" <${process.env.EMAIL_USER}>`,
+                                    to: userRec.email,
+                                    subject: `Workspace deleted: ${workspace.name}`,
+                                    html: `<p>Hi ${displayName},</p><p>The workspace <strong>${workspace.name}</strong> was deleted by <strong>${adminName}</strong>. If you need access to data from this workspace please contact the workspace owner or admin.</p><p>Thanks,<br/>SyncSpace</p>`
+                                };
+                                transporter.sendMail(mailOptions).catch(e => console.error('Error sending workspace-deleted email to', userRec.email, e));
+                            }
+                        } catch (emailErr) {
+                            console.error('Error while attempting to email user about workspace deletion:', emailErr);
+                        }
+                    } catch (uErr) {
+                        console.error('Error preparing notification for user', rid, uErr);
+                    }
+                }
+            }
+        } catch (notifyErr) {
+            console.error('Error notifying members about workspace deletion:', notifyErr);
+        }
+
+        // 3.c Delete any invitations referencing this workspace to keep invitations list clean
+        try {
+            const delRes = await Invitation.deleteMany({ workspace: workspaceId });
+            console.log(`Deleted ${delRes.deletedCount || 0} invitations for workspace ${workspaceId}.`);
+        } catch (invErr) {
+            console.error('Error deleting invitations for workspace during workspace deletion:', invErr);
+        }
 
         // 4. Delete the workspace itself
         await Workspace.findByIdAndDelete(workspaceId);

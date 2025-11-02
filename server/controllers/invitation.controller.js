@@ -322,6 +322,11 @@ const getInvitationById = async (req, res) => {
 
         // Allow invitee (by email or user id), inviter, or workspace owner/admin to view
         const workspace = invitation.workspace;
+        // If the workspace was deleted after the invitation was created, `workspace` may be null.
+        // Return a clear status so the client can show an appropriate message.
+        if (!workspace) {
+            return res.status(410).json({ message: 'Workspace was deleted by the admin.' });
+        }
         const inviteeEmail = invitation.inviteeEmail?.toLowerCase();
         const isInviteeByEmail = req.user.email && req.user.email.toLowerCase() === inviteeEmail;
         const isInviteeById = invitation.inviteeUser && invitation.inviteeUser._id && invitation.inviteeUser._id.toString() === userId.toString();

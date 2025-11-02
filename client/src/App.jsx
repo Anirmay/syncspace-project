@@ -11,6 +11,7 @@ import ConfirmEmailPage from './pages/ConfirmEmailPage';
 import DashboardPage from './pages/DashboardPage';
 import WorkspacePage from './pages/WorkspacePage';
 import ChatPage from './pages/ChatPage';
+import ChatConversation from './pages/ChatConversation';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import CreateProjectDetailsPage from './pages/CreateProjectDetailsPage';
@@ -74,6 +75,10 @@ function App() {
     <Route
       path="/chat"
       element={ <ProtectedRoute> <ChatPage /> </ProtectedRoute> }
+    />
+    <Route
+      path="/chat/:userId"
+      element={ <ProtectedRoute> <ChatConversation /> </ProtectedRoute> }
     />
     <Route path="/create-project-details" element={ <ProtectedRoute> <CreateProjectDetailsPage /> </ProtectedRoute> } />
     {/* Invitations should be viewable without signing in */}

@@ -1,8 +1,10 @@
  import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
  import { useParams, Link, useNavigate } from 'react-router-dom';
- import axios from 'axios';
- // --- FIX: Corrected import path/extension ---
- import { AuthContext } from '../context/AuthContext.jsx'; // Using the real context import
+import axios from 'axios';
+// --- FIX: Corrected import path/extension ---
+import { AuthContext } from '../context/AuthContext.jsx'; // Using the real context import
+import FileUpload from '../components/FileUpload';
+import FileList from '../components/FileList';
  import {
      DndContext, closestCorners,
      KeyboardSensor, PointerSensor, useSensor,
@@ -196,6 +198,7 @@
  const TaskDetailModal = ({ task, workspace, onClose, onUpdateTask, onConfirmDelete, onStartTask, onOpenEdit, onCompleteTask, onReopenTask, isArchived }) => { 
      const [loading, setLoading] = useState(false);
      const [error, setError] = useState('');
+    const [uploadSignal, setUploadSignal] = useState(0);
  
      const handleDeleteClick = () => { onConfirmDelete(task); onClose(); };
      
@@ -242,6 +245,14 @@
                                      <p><strong>Assigned To:</strong> {task.assignedTo?.username || <span className="italic text-slate-500">Unassigned</span>}</p>
                                  </div>
                              </div>
+
+                            {/* File attachments (PoC) */}
+                            <div className="pt-4 border-t border-slate-700">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <FileUpload workspaceId={workspace?._id} taskId={task._id} onUploaded={() => setUploadSignal(s => s + 1)} />
+                                    <FileList workspaceId={workspace?._id} taskId={task._id} refreshSignal={uploadSignal} />
+                                </div>
+                            </div>
                          </div>
                          
                          {/* --- MODIFIED: Conditional Button Rendering --- */}
@@ -322,41 +333,41 @@
  
  // --- NEW: Confirm Delete WORKSPACE Modal ---
  const ConfirmDeleteWorkspaceModal = ({ workspaceName, onCancel, onConfirm, isDeleting }) => (
-     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[80] p-4 backdrop-blur-md"> {/* Increased z-index */}
-         <div className="bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-slate-600">
-             <h3 className="text-xl font-semibold text-red-400 mb-3">Delete Workspace?</h3> {/* Warning color */}
-             <p className="text-slate-300 mb-6">
-                 Are you absolutely sure you want to delete the workspace: <strong className="font-medium text-white">{workspaceName}</strong>?
-             </p>
-             <p className="text-sm text-amber-400 mb-6 bg-amber-900/30 p-3 rounded border border-amber-700"> {/* Warning box */}
-                 <strong>Warning:</strong> This action cannot be undone. All boards, columns, and tasks within this workspace will be permanently deleted.
-             </p>
-             <div className="flex justify-end gap-3">
-                 <button
-                     type="button"
-                     onClick={onCancel}
-                     disabled={isDeleting}
-                     className="bg-slate-600 hover:bg-slate-500 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-                 >
-                     Cancel
-                 </button>
-                 <button
-                     type="button"
-                     onClick={onConfirm}
-                     disabled={isDeleting}
-                     className="btn-danger-deep w-36 disabled:opacity-50"
-                 >
-                     {isDeleting ? (
-                          <> <Spinner small={true} /> Deleting... </> // Use small spinner
-                     ) : (
-                          <> <TrashIcon small={true} /> Confirm Delete </>
-                     )}
-                 </button>
-             </div>
-         </div>
-         {/* Add small spinner variation */}
-         <style>{`.spinner-small { width: 1rem; height: 1rem; border-width: 2px; }`}</style>
-     </div>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[80] p-4 backdrop-blur-md"> {/* Increased z-index */}
+        <div className="bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-slate-600">
+            <h3 className="text-xl font-semibold text-red-400 mb-3">Delete Workspace?</h3> {/* Warning color */}
+            <p className="text-slate-300 mb-6">
+                Are you absolutely sure you want to delete the workspace: <strong className="font-medium text-white">{workspaceName}</strong>?
+            </p>
+            <p className="text-sm text-amber-400 mb-6 bg-amber-900/30 p-3 rounded border border-amber-700"> {/* Warning box */}
+                <strong>Warning:</strong> This action cannot be undone. All boards, columns, and tasks within this workspace will be permanently deleted.
+            </p>
+            <div className="flex items-center justify-end gap-3 flex-nowrap">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    disabled={isDeleting}
+                    className="inline-flex items-center justify-center bg-slate-600 hover:bg-slate-500 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    onClick={onConfirm}
+                    disabled={isDeleting}
+                    className="inline-flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 px-4 rounded-lg disabled:opacity-50"
+                >
+                    {isDeleting ? (
+                         <> <Spinner small={true} /> Deleting... </> // Use small spinner
+                    ) : (
+                         <> <TrashIcon small={true} /> Confirm Delete </>
+                    )}
+                </button>
+            </div>
+        </div>
+        {/* Add small spinner variation */}
+        <style>{`.spinner-small { width: 1rem; height: 1rem; border-width: 2px; }`}</style>
+    </div>
  );
  // --- END NEW MODAL ---
  
@@ -852,6 +863,8 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
     const [workspaceChatMessages, setWorkspaceChatMessages] = useState([]);
     const [workspaceChatInput, setWorkspaceChatInput] = useState('');
     const [loadingWorkspaceChat, setLoadingWorkspaceChat] = useState(false);
+    // Toast (top sliding notification)
+    const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
  
  
      // --- Fetching Logic (Updated for Preview Handling) ---
@@ -1383,11 +1396,19 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
              await axios.delete(`http://localhost:5000/api/tasks/${taskToDelete._id}`, config);
              
-             handleDeleteTaskState(taskToDelete._id, columnId); 
-             handleCloseDeleteConfirm();
+            handleDeleteTaskState(taskToDelete._id, columnId); 
+            handleCloseDeleteConfirm();
+            // show top toast
+            setToast({ show: true, msg: 'Task deleted successfully', type: 'success' });
+            setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 3000);
          } catch (err) {
              console.error('Failed to delete task:', err);
-             alert(err.response?.data?.message || "Failed to delete task.");
+            const message = err.response?.data?.message || "Failed to delete task.";
+            // show error toast
+            setToast({ show: true, msg: message, type: 'error' });
+            setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 3500);
+            // keep the alert fallback for now
+            alert(message);
              handleCloseDeleteConfirm();
          } finally {
              setIsDeleting(false);
@@ -1533,11 +1554,14 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
              // IMPORTANT: Ensure your backend has this route: DELETE /api/workspaces/:workspaceId
              await axios.delete(`http://localhost:5000/api/workspaces/${workspaceId}`, config);
              
-             // Use a simple alert for now. Replace with a modal/toast if you prefer.
-             alert('Workspace deleted successfully.'); 
-             
-             handleCloseDeleteWorkspaceConfirm();
-             navigate('/dashboard'); // Redirect to dashboard after deletion
+            // show top red toast for delete success then redirect
+            handleCloseDeleteWorkspaceConfirm();
+            setToast({ show: true, msg: 'Workspace deleted successfully', type: 'error' });
+            // hide toast after a bit and then redirect
+            setTimeout(() => {
+                setToast({ show: false, msg: '', type: 'success' });
+                navigate('/dashboard');
+            }, 1000);
          } catch (err) {
              console.error('Failed to delete workspace:', err);
              // Use alert for errors too (replace with better UI later)
@@ -1552,6 +1576,16 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
     // --- Render Logic ---
     return (
         <div className={`min-h-screen bg-slate-900 text-white p-8 font-inter ${workspaceChatOpen ? 'chat-open' : ''}`}>
+            {/* Top sliding toast */}
+            <div className={`fixed left-0 right-0 top-4 flex justify-center pointer-events-none z-50`}>
+                <div className={`pointer-events-auto transform transition-transform duration-500 ease-out ${toast.show ? 'translate-y-0' : '-translate-y-full'}`}>
+                    {toast.show && (
+                        <div className={`px-4 py-2 rounded shadow-lg text-sm ${toast.type === 'error' ? 'bg-rose-600 text-white' : toast.type === 'info' ? 'bg-slate-600 text-white' : 'bg-emerald-500 text-white'}`}>
+                            {toast.msg}
+                        </div>
+                    )}
+                </div>
+            </div>
             <header className="mb-8 flex flex-wrap justify-between items-start gap-y-4 bg-transparent">
                    <div className="flex flex-col gap-1">
                         <Link to="/dashboard" className="text-indigo-400 hover:underline text-sm mb-1 hidden md:block">&larr; Back to Workspaces</Link>

@@ -1,7 +1,24 @@
 import Message from '../models/Message.js';
 import Workspace from '../models/Workspace.js';
 import User from '../models/User.js'; // Need User model for DMs
+import Notification from '../models/Notification.js';
 import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Helper to configure Nodemailer (small copy to avoid circular imports)
+const setupTransporter = () => {
+    return nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '465', 10),
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+};
 
 // @desc    Get all messages for a specific workspace
 // @route   GET /api/workspaces/:workspaceId/messages
@@ -162,6 +179,48 @@ const createDirectMessage = async (req, res) => {
         const populatedMessage = await Message.findById(savedMessage._id)
             .populate('sender', 'username _id')
             .populate('receiver', 'username _id');
+
+        // Create an in-app notification for the receiver so the UI can show unread counts
+        try {
+            const notif = new Notification({
+                user: receiverId,
+                actor: senderId,
+                type: 'direct_message',
+                message: `${req.user.username || 'Someone'} sent you a message: ${String(text).slice(0, 120)}`,
+                link: `/chat/${senderId}`
+            });
+            await notif.save();
+            console.log('Notification created for direct message', { to: receiverId.toString(), notifId: notif._id.toString() });
+        } catch (notifErr) {
+            console.error('Error creating notification for DM:', notifErr);
+        }
+
+        // If email notifications are enabled, attempt to send an email (kept optional)
+        if (process.env.DM_NOTIFICATIONS_ENABLED === 'true') {
+            try {
+                const receiver = await User.findById(receiverId).select('email emailNotifications username');
+                if (receiver && receiver.email && receiver.emailNotifications !== false) {
+                    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || !process.env.EMAIL_HOST) {
+                        console.warn('Email configuration missing in environment; skipping sending DM email.');
+                    } else {
+                        const transporter = setupTransporter();
+                        const mail = {
+                            from: `"SyncSpace Notifications" <${process.env.EMAIL_USER}>`,
+                            to: receiver.email,
+                            subject: `${req.user.username || 'Someone'} sent you a message on SyncSpace`,
+                            text: `${req.user.username || 'Someone'} sent you a message:\n\n${text}\n\nOpen the conversation: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/chat/${senderId}`
+                        };
+                        transporter.sendMail(mail)
+                            .then(info => console.log('DM email sent:', info && info.messageId ? info.messageId : info))
+                            .catch(err => console.error('Error sending DM email:', err));
+                    }
+                } else {
+                    console.log('Receiver has no email or has disabled email notifications; skipping email.');
+                }
+            } catch (emailErr) {
+                console.error('Error preparing DM email:', emailErr);
+            }
+        }
 
         // TODO: Add Socket.IO emit here to broadcast the message *specifically* to sender and receiver user IDs/sockets
         // Example: req.io.to(senderId.toString()).to(receiverId.toString()).emit('newDirectMessage', populatedMessage);
