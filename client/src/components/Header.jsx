@@ -189,8 +189,6 @@ const Header = () => {
       const loc = normalize(location.pathname || '/');
       const target = normalize(path);
 
-      // Special-case: treat any workspace route as part of the Dashboard nav
-      // so that visiting /workspace/:workspaceId highlights "Workflow Board".
       if (target === '/dashboard') {
         if (loc === target) return true;
         if (loc.startsWith('/workspace')) return true;

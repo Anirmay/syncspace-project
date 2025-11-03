@@ -10,14 +10,33 @@ const FileUpload = ({ workspaceId, taskId, onUploaded }) => {
   const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
-    setFile(e.target.files[0]);
+    const f = e.target.files[0];
     setError('');
+    if (!f) { setFile(null); return; }
+    // Validate extension and MIME for .txt files only
+    const name = (f.name || '').toLowerCase();
+    const ext = name.includes('.') ? name.split('.').pop() : '';
+    const mime = (f.type || '').toLowerCase();
+    if (ext !== 'txt' && mime !== 'text/plain') {
+      setFile(null);
+      setError('Only .txt files are allowed.');
+      return;
+    }
+    setFile(f);
   };
 
   const handleUpload = async () => {
-    if (!file) return setError('Choose a file first');
+    if (!file) return setError('Choose a .txt file first');
     if (!currentUser || !currentUser.token) return setError('Authentication required');
     setLoading(true); setError('');
+    // Extra safety: verify extension again before sending
+    const name = (file.name || '').toLowerCase();
+    const ext = name.includes('.') ? name.split('.').pop() : '';
+    const mime = (file.type || '').toLowerCase();
+    if (ext !== 'txt' && mime !== 'text/plain') {
+      setLoading(false);
+      return setError('Only .txt files are allowed.');
+    }
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -40,7 +59,7 @@ const FileUpload = ({ workspaceId, taskId, onUploaded }) => {
     <div className="space-y-2">
       <label className="text-sm text-slate-300">Attach file</label>
       <div className="flex items-center gap-2">
-        <input type="file" onChange={handleChange} className="text-sm text-slate-200" />
+        <input type="file" accept=".txt,text/plain" onChange={handleChange} className="text-sm text-slate-200" />
         <button disabled={loading} onClick={handleUpload} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm">
           {loading ? 'Uploading...' : 'Upload'}
         </button>

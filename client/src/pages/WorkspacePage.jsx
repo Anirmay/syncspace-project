@@ -10,6 +10,7 @@ import FileList from '../components/FileList';
      KeyboardSensor, PointerSensor, useSensor,
      useSensors, DragOverlay
  } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
  import {
      SortableContext, sortableKeyboardCoordinates,
      verticalListSortingStrategy, useSortable, arrayMove
@@ -423,7 +424,7 @@ import FileList from '../components/FileList';
  };
  
  // --- ADDED isArchived PROP ---
-const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDeleteTask, isOver, isArchived }) => {
+const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDeleteTask, isValidTarget, isHovering, isArchived }) => {
      const taskIds = tasks.map(task => task._id);
 
     // Determine a semantic class for column type so we can style borders per column.
@@ -434,8 +435,24 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
     else if (lc.includes('in progress') || lc.includes('progress')) colTypeClass = 'col-inprogress';
     else if (lc.includes('done') || lc.includes('completed')) colTypeClass = 'col-done';
  
+    // Visual states:
+    // - valid target: subtle highlight
+    // - hover (over): stronger highlight
+    const baseClass = 'card p-3 rounded-md w-72 flex-shrink-0 flex flex-col transition-colors duration-200 ease-in-out';
+    const validClass = 'ring-1 ring-indigo-500/30 border-indigo-500/10 bg-slate-800/30';
+    const hoverClassBase = 'ring-2 ring-indigo-600 border-indigo-600 bg-indigo-900/10 shadow-lg';
+
+    // Register droppable so empty columns can accept drops
+    const { isOver: droppableIsOver, setNodeRef: setDroppableNodeRef } = useDroppable({ id: column._id?.toString() });
+    const hovering = !!isHovering || !!droppableIsOver;
+
+    // Compose classes: subtle highlight for allowed targets, stronger highlight when hovered
+    let composedClasses = baseClass;
+    if (isValidTarget) composedClasses += ` ${validClass}`;
+    if (hovering) composedClasses += ` ${hoverClassBase}`;
+
     return (
-        <div className={`card p-3 rounded-md w-72 flex-shrink-0 flex flex-col transition-colors duration-200 ease-in-out ${isOver ? 'ring-1 ring-indigo-600 border-indigo-600' : ''} ${colTypeClass}`}>
+        <div ref={setDroppableNodeRef} className={`${composedClasses} ${colTypeClass}`}>
              <h4 className="font-semibold text-slate-300 mb-4 px-1 flex-shrink-0">{column.name} ({tasks.length})</h4>
  
              {/* --- MODIFIED: Hide Add Task if archived --- */}
@@ -448,8 +465,8 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
                   </button>
              )}
  
-             <SortableContext id={column._id} items={taskIds} strategy={verticalListSortingStrategy}>
-                 <div className={`min-h-[100px] flex-grow overflow-y-auto max-h-[60vh] pr-1 rounded`}>
+                     <SortableContext id={column._id} items={taskIds} strategy={verticalListSortingStrategy}>
+                 <div className={`min-h-[100px] flex-grow overflow-y-auto max-h-[60vh] pr-1 rounded ${tasks.length === 0 ? 'py-6' : ''}`}>
                      {tasks.map((task) => (
                          <KanbanTask
                              key={task._id}
@@ -467,7 +484,7 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
  };
  
  // --- ADDED isArchived PROP ---
- const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDeleteTask, searchQuery, setSearchQuery, overColumnId, isArchived }) => {
+const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDeleteTask, searchQuery, setSearchQuery, overColumnId, allowedTargetIds, isArchived }) => {
      if (!board || !Array.isArray(board.columns)) return <p>Invalid board data.</p>;
      if (!Array.isArray(tasks)) return <p>Invalid tasks data.</p>
  
@@ -521,7 +538,8 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
                          onAddTaskClick={onAddTaskClick} 
                          onTaskClick={onTaskClick}
                          onConfirmDeleteTask={onConfirmDeleteTask} 
-                         isOver={column._id === overColumnId} 
+                        isValidTarget={Array.isArray(allowedTargetIds) && allowedTargetIds.some(id => id.toString() === column._id.toString())}
+                        isHovering={column._id?.toString() === (overColumnId?.toString ? overColumnId.toString() : overColumnId)}
                          isArchived={isArchived} // --- Pass prop down ---
                      />
                   ))}
@@ -854,6 +872,8 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
      const [taskToDelete, setTaskToDelete] = useState(null);
      const [isDeleting, setIsDeleting] = useState(false);
      const [overColumnId, setOverColumnId] = useState(null);
+    // IDs of columns that are valid drop targets for the currently dragged task
+    const [allowedTargetIds, setAllowedTargetIds] = useState([]);
      const [editingTask, setEditingTask] = useState(null); // Task object for the DOC EDITOR
      const [taskToEdit, setTaskToEdit] = useState(null); // Task object for the EDIT MODAL
      const [showDeleteWorkspaceConfirm, setShowDeleteWorkspaceConfirm] = useState(false); // NEW: Workspace delete confirm state
@@ -948,6 +968,50 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
          const task = tasks.find(t => t._id === active.id); 
          setActiveTask(task); 
          setOverColumnId(null); 
+        // Determine valid target columns based on workflow rules
+        if (task) {
+            // Find the board that contains this task (use toString for robust comparison)
+            const sourceBoard = boards.find(b => b._id?.toString() === task.board?.toString());
+            if (sourceBoard && Array.isArray(sourceBoard.columns)) {
+                const srcCol = sourceBoard.columns.find(c => c._id?.toString() === task.column?.toString());
+                const srcName = (srcCol?.name || '').toLowerCase();
+                const srcNameNorm = srcName.replace(/\s+/g, '');
+                let allowed = [];
+
+                // From To Do => In Progress, Done
+                if (srcName.includes('to do') || srcName.includes('todo') || /^to\b/.test(srcName) || srcNameNorm === 'todo') {
+                    allowed = sourceBoard.columns.filter(c => {
+                        const n = (c.name || '').toLowerCase();
+                        const nn = n.replace(/\s+/g, '');
+                        return n.includes('in progress') || n.includes('progress') || nn.includes('inprogress') || n.includes('done') || nn.includes('done') || n.includes('completed');
+                    }).map(c => c._id?.toString());
+                }
+                // From In Progress => Done
+                else if (srcName.includes('in progress') || srcName.includes('progress') || srcNameNorm === 'inprogress') {
+                    allowed = sourceBoard.columns.filter(c => {
+                        const n = (c.name || '').toLowerCase();
+                        const nn = n.replace(/\s+/g, '');
+                        return n.includes('done') || nn.includes('done') || n.includes('completed');
+                    }).map(c => c._id?.toString());
+                }
+                // From Done => In Progress
+                else if (srcName.includes('done') || srcName.includes('completed') || srcNameNorm === 'done') {
+                    allowed = sourceBoard.columns.filter(c => {
+                        const n = (c.name || '').toLowerCase();
+                        const nn = n.replace(/\s+/g, '');
+                        return n.includes('in progress') || n.includes('progress') || nn.includes('inprogress');
+                    }).map(c => c._id?.toString());
+                }
+
+                console.debug('Drag start - task:', task._id, 'srcName:', srcName, 'allowedTargets:', allowed);
+                setAllowedTargetIds(allowed);
+            } else {
+                console.debug('Drag start - sourceBoard not found for task', task._id);
+                setAllowedTargetIds([]);
+            }
+        } else {
+            setAllowedTargetIds([]);
+        }
      }
  
      function handleDragOver(event) {
@@ -975,6 +1039,7 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
      function handleDragCancel() {
          setActiveTask(null);
          setOverColumnId(null);
+        setAllowedTargetIds([]);
      }
      
      // --- NEW HELPER: Find column by name (case-insensitive) ---
@@ -1108,7 +1173,8 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
      function handleDragEnd(event) {
          const { active, over } = event;
          setActiveTask(null);
-         setOverColumnId(null); 
+    setOverColumnId(null);
+    setAllowedTargetIds([]);
  
          if (!over || active.id === over.id) return; 
  
@@ -1166,6 +1232,11 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
                  return; // Cancel the move
              }
          }
+        // If destination column is not in allowedTargetIds, cancel the drop
+        if (allowedTargetIds && allowedTargetIds.length > 0 && !allowedTargetIds.some(id => id.toString() === destinationColumnId.toString())) {
+            console.warn('WORKFLOW BLOCK: Destination is not an allowed target for this task.', { allowedTargetIds, destinationColumnId });
+            return;
+        }
          // --- END NEW RULES ---
  
  
@@ -1656,6 +1727,7 @@ const KanbanColumn = ({ column, tasks, onAddTaskClick, onTaskClick, onConfirmDel
                                       searchQuery={searchQuery}
                                       setSearchQuery={setSearchQuery}
                                       overColumnId={overColumnId}
+                                      allowedTargetIds={allowedTargetIds}
                                       isArchived={isArchived} // --- Pass prop down ---
                                   />
                               ))
