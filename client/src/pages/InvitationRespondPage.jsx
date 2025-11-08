@@ -13,13 +13,14 @@ const InvitationRespondPage = () => {
   const [adminDeleted, setAdminDeleted] = useState(false);
   // Support different currentUser shapes
   const token = currentUser?.token || currentUser?.accessToken || currentUser?.user?.token;
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchInvite = async () => {
       try {
         setLoading(true);
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get(`http://localhost:5000/api/invitations/${inviteId}`, config);
+        const res = await axios.get(`${API_URL}/api/invitations/${inviteId}`, config);
         setInvitation(res.data);
       } catch (err) {
         console.error('Error loading invitation:', err);
@@ -48,7 +49,7 @@ const InvitationRespondPage = () => {
     try {
       setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.patch(`http://localhost:5000/api/invitations/${inviteId}/respond`, { action }, config);
+      const res = await axios.patch(`${API_URL}/api/invitations/${inviteId}/respond`, { action }, config);
       // On accept: redirect to workspace manage page; on reject: back to invitations
       if (action === 'accept') {
         const wsId = invitation?.workspace?._id || invitation?.workspace;

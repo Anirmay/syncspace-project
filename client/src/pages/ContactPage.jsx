@@ -57,6 +57,7 @@ const ContactPage = () => {
     const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+    const API_URL = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
         initAOS();
@@ -74,7 +75,7 @@ const ContactPage = () => {
         setShowSuccessAnimation(false);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/contact', formData);
+            const response = await axios.post(`${API_URL}/api/contact`, formData);
             setStatusMessage(response.data.message);
             setFormData({ name: '', email: '', subject: '', message: '' });
             setShowSuccessAnimation(true);

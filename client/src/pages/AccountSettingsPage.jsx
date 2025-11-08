@@ -1,8 +1,15 @@
-    import React, { useContext, useState, useEffect } from 'react';
-    import { AuthContext } from '../context/AuthContext';
+import React, { useContext, useState, useEffect } from 'react';
+    // --- FIX #1: Added .jsx extension ---
+    import { AuthContext } from '../context/AuthContext.jsx';
     import { Link, useNavigate } from 'react-router-dom';
     import axios from 'axios'; // <-- Import Axios
-    const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:5000';
+    
+    // --- FIX #2: Import API_BASE from our single config file ---
+    import API_BASE from '../apiConfig.js';
+    
+    // --- REMOVED the local API_BASE definition you added ---
+    // const API_URL = import.meta.env.VITE_API_URL;
+    // const API_BASE = ... (this logic is now in apiConfig.js)
 
     // Simple ToggleSwitch implementation
     const ToggleSwitch = ({ label, enabled, setEnabled }) => {
@@ -353,9 +360,9 @@
                         <div className="p-6 bg-slate-700 rounded-md">
                              <h2 className="text-xl font-semibold mb-4 text-slate-200">Account Actions</h2>
                              <div className="space-y-3">
-                                <button onClick={handleLogout} className="w-full text-left text-yellow-500 hover:text-yellow-400 font-medium">Logout</button>
-                                <button onClick={handleDeleteAccount} className="w-full text-left text-red-500 hover:text-red-400 font-medium">Delete Account</button>
-                                {deleteError && <p className="text-red-500 text-sm mt-2">{deleteError}</p>}
+                                 <button onClick={handleLogout} className="w-full text-left text-yellow-500 hover:text-yellow-400 font-medium">Logout</button>
+                                 <button onClick={handleDeleteAccount} className="w-full text-left text-red-500 hover:text-red-400 font-medium">Delete Account</button>
+                                 {deleteError && <p className="text-red-500 text-sm mt-2">{deleteError}</p>}
                             </div>
                         </div>
                     </div>
@@ -368,5 +375,3 @@
     };
 
     export default AccountSettingsPage;
-    
-

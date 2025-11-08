@@ -7,6 +7,7 @@ const ForgotPasswordPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,7 +16,7 @@ const ForgotPasswordPage = () => {
     setError('');
     try {
       // Ensure this URL is exactly as written
-      const response = await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
+      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
 
       setMessage(response.data.message);
       // Display the token for testing

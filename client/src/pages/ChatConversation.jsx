@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
+// --- FIX: Added .jsx extension to the import path ---
+import { AuthContext } from '../context/AuthContext.jsx';
 import ChatMessage from '../components/ChatMessage';
 
 const ChatConversation = () => {
@@ -15,17 +16,22 @@ const ChatConversation = () => {
     const [otherUser, setOtherUser] = useState(null);
     const messagesEndRef = useRef(null);
 
+    // --- ADD THIS LINE ---
+    // This is your live backend URL from the .env file
+    const API_URL = import.meta.env.VITE_API_URL;
+
     useEffect(() => {
         // fetch user info
         const fetchUser = async () => {
             try {
                 const cfg = currentUser?.token ? { headers: { Authorization: `Bearer ${currentUser.token}` } } : {};
-                const res = await axios.get(`http://localhost:5000/api/users/${userId}`, cfg);
+                // --- FIX #1 ---
+                const res = await axios.get(`${API_URL}/api/users/${userId}`, cfg);
                 setOtherUser(res.data);
             } catch (e) { /* ignore */ }
         };
         fetchUser();
-    }, [userId, currentUser]);
+    }, [userId, currentUser, API_URL]); // Added API_URL to dependency array
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -33,7 +39,8 @@ const ChatConversation = () => {
             setLoading(true);
             try {
                 const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const res = await axios.get(`http://localhost:5000/api/messages/direct/${userId}`, cfg);
+                // --- FIX #2 ---
+                const res = await axios.get(`${API_URL}/api/messages/direct/${userId}`, cfg);
                 setMessages(res.data || []);
                 // clear unread for this user in localStorage map
                 try {
@@ -45,7 +52,7 @@ const ChatConversation = () => {
             } finally { setLoading(false); }
         };
         fetchMessages();
-    }, [userId, currentUser, logout, navigate]);
+    }, [userId, currentUser, logout, navigate, API_URL]); // Added API_URL to dependency array
 
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -66,7 +73,8 @@ const ChatConversation = () => {
         setText('');
         try {
             const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-            const res = await axios.post('http://localhost:5000/api/messages/direct', { text, sender: currentUser.user._id, receiver: userId }, cfg);
+            // --- FIX #3 ---
+            const res = await axios.post(`${API_URL}/api/messages/direct`, { text, sender: currentUser.user._id, receiver: userId }, cfg);
             setMessages(prev => prev.map(m => m._id === tempId ? res.data : m));
         } catch (e) {
             setMessages(prev => prev.filter(m => m._id !== tempId));

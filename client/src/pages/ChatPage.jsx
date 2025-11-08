@@ -1,8 +1,13 @@
 import React, { useState, useContext, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+// --- FIX #1: Added .jsx extension ---
+import { AuthContext } from '../context/AuthContext.jsx';
 import axios from 'axios';
-import ChatMessage from '../components/ChatMessage';
+// --- FIX #2: Added .jsx extension ---
+import ChatMessage from '../components/ChatMessage.jsx';
+// --- FIX #3: Import our API config ---
+import API_BASE from '../apiConfig.js';
+
 // TODO: Add Socket.IO client library import here
 // import io from 'socket.io-client';
 
@@ -63,7 +68,8 @@ const ChatPage = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
                 // NEW Backend Endpoint needed: GET /api/users (should exclude current user)
-                const response = await axios.get(`http://localhost:5000/api/users`, config);
+                // --- FIX #4: Use API_BASE ---
+                const response = await axios.get(`${API_BASE}/api/users`, config);
                 // Filter out the current user from the list
                 const otherUsers = response.data.filter(user => user._id !== currentUser.user._id);
                 setUsers(otherUsers);
@@ -90,7 +96,8 @@ const ChatPage = () => {
                 if (!currentUser?.token) return;
                 try {
                     const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                    const res = await axios.get('http://localhost:5000/api/notifications', cfg);
+                    // --- FIX #5: Use API_BASE ---
+                    const res = await axios.get(`${API_BASE}/api/notifications`, cfg);
                     const notifs = res.data || [];
                     const dmCounts = {};
                     notifs.forEach(n => {
@@ -133,7 +140,8 @@ const ChatPage = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
                 // NEW Backend Endpoint needed: GET /api/messages/direct/:userId
-                const response = await axios.get(`http://localhost:5000/api/messages/direct/${selectedUser._id}`, config);
+                // --- FIX #6: Use API_BASE ---
+                const response = await axios.get(`${API_BASE}/api/messages/direct/${selectedUser._id}`, config);
                 setMessages(response.data);
                 // we've opened this conversation — mark unread for this user as read
                 try {
@@ -146,7 +154,8 @@ const ChatPage = () => {
                     // Mark server-side direct-message notifications from this actor as read
                     try {
                         const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                        await axios.patch(`http://localhost:5000/api/notifications/markDirectRead/${selectedUser._id}`, {}, cfg);
+                        // --- FIX #7: Use API_BASE ---
+                        await axios.patch(`${API_BASE}/api/notifications/markDirectRead/${selectedUser._id}`, {}, cfg);
                         // notify header to refresh quickly (it polls every 15s)
                         window.dispatchEvent(new CustomEvent('server-notification-received'));
                     } catch (e) {
@@ -232,7 +241,8 @@ const ChatPage = () => {
         const fetchUser = async () => {
             try {
                 const cfg = currentUser?.token ? { headers: { Authorization: `Bearer ${currentUser.token}` } } : {};
-                const res = await axios.get(`http://localhost:5000/api/users/${openId}`, cfg);
+                // --- FIX #8: Use API_BASE ---
+                const res = await axios.get(`${API_BASE}/api/users/${openId}`, cfg);
                 if (res?.data) {
                     setSelectedUser(res.data);
                     setUnreadMap(prev => { const copy = { ...prev }; if (copy[openId]) delete copy[openId]; return copy; });
@@ -271,7 +281,8 @@ const ChatPage = () => {
 
         try {
             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-            const response = await axios.post('http://localhost:5000/api/messages/direct', newMessageData, config);
+            // --- FIX #9: Use API_BASE ---
+            const response = await axios.post(`${API_BASE}/api/messages/direct`, newMessageData, config);
 
              setMessages(prevMessages => prevMessages.map(msg =>
                  msg._id === tempMessageId ? response.data : msg
@@ -350,9 +361,9 @@ const ChatPage = () => {
 
               <footer className="hidden md:flex p-4 border-t border-slate-700 items-center space-x-3 flex-shrink-0">{/* hide current-user footer on mobile */}
                  <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-sm font-bold ring-1 ring-offset-2 ring-offset-slate-800 ring-teal-400">
-                          {currentUser?.user?.username ? currentUser.user.username.charAt(0).toUpperCase() : '?'}
-                     </div>
-                     <span className="text-sm font-medium truncate">{currentUser?.user?.username || 'User'}</span>
+                         {currentUser?.user?.username ? currentUser.user.username.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <span className="text-sm font-medium truncate">{currentUser?.user?.username || 'User'}</span>
                  </footer>
             </aside>
 
@@ -420,4 +431,3 @@ const ChatPage = () => {
 };
 
 export default ChatPage;
-

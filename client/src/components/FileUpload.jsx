@@ -8,6 +8,7 @@ const FileUpload = ({ workspaceId, taskId, onUploaded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleChange = (e) => {
     const f = e.target.files[0];
@@ -44,7 +45,7 @@ const FileUpload = ({ workspaceId, taskId, onUploaded }) => {
       if (taskId) fd.append('taskId', taskId);
 
       const cfg = { headers: { Authorization: `Bearer ${currentUser.token}`, 'Content-Type': 'multipart/form-data' } };
-      const res = await axios.post('http://localhost:5000/api/files', fd, cfg);
+      const res = await axios.post(`${API_URL}/api/files`, fd, cfg);
       setFile(null);
       setSuccess('Uploaded successfully');
       setTimeout(() => setSuccess(''), 2200);

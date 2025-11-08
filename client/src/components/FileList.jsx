@@ -11,13 +11,14 @@ const FileList = ({ workspaceId, taskId, refreshSignal }) => {
   const [confirm, setConfirm] = useState({ open: false, fileId: null, fileName: '' });
   // toast (sliding notification)
   const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const fetch = async () => {
     if (!currentUser || !currentUser.token) return;
     setLoading(true);
     try {
       const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-      const url = taskId ? `http://localhost:5000/api/files/task/${taskId}` : `http://localhost:5000/api/files/workspace/${workspaceId}`;
+      const url = taskId ? `${API_URL}/api/files/task/${taskId}` : `${API_URL}/api/files/workspace/${workspaceId}`;
       const res = await axios.get(url, cfg);
       setFiles(res.data || []);
     } catch (err) {
@@ -30,7 +31,7 @@ const FileList = ({ workspaceId, taskId, refreshSignal }) => {
   const download = async (fileId, index) => {
     if (!currentUser || !currentUser.token) return;
     try {
-      const url = `http://localhost:5000/api/files/${fileId}/download?versionIndex=${index}`;
+      const url = `${API_URL}/api/files/${fileId}/download?versionIndex=${index}`;
       const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` }, responseType: 'blob' };
       const res = await axios.get(url, cfg);
       const blob = new Blob([res.data]);
@@ -71,7 +72,7 @@ const FileList = ({ workspaceId, taskId, refreshSignal }) => {
 
       // verify existence (clear handling for 404)
       try {
-        await axios.get(`http://localhost:5000/api/files/${fileId}`, cfg);
+        await axios.get(`${API_URL}/api/files/${fileId}`, cfg);
       } catch (metaErr) {
         if (metaErr.response && metaErr.response.status === 404) {
           await fetch();
@@ -84,7 +85,7 @@ const FileList = ({ workspaceId, taskId, refreshSignal }) => {
         throw metaErr;
       }
 
-      await axios.delete(`http://localhost:5000/api/files/${fileId}`, cfg);
+      await axios.delete(`${API_URL}/api/files/${fileId}`, cfg);
       await fetch();
       setConfirm({ open: false, fileId: null, fileName: '' });
       // show success toast

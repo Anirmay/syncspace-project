@@ -46,6 +46,7 @@ const Header = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     let intervalId;
@@ -54,7 +55,7 @@ const Header = () => {
         const token = currentUser?.token || currentUser?.user?.token;
         if (!token) return;
         const cfg = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get('http://localhost:5000/api/notifications', cfg);
+        const res = await axios.get(`${API_URL}/api/notifications`, cfg);
         setNotifications(res.data || []);
       } catch (err) {
         // ignore
@@ -131,7 +132,7 @@ const Header = () => {
       const token = currentUser?.token || currentUser?.user?.token;
       if (!token) return;
       const cfg = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.patch('http://localhost:5000/api/notifications/markAllRead', {}, cfg);
+      await axios.patch(`${API_URL}/api/notifications/markAllRead`, {}, cfg);
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (err) {
       // ignore
@@ -144,7 +145,7 @@ const Header = () => {
       const cfg = token ? { headers: { Authorization: `Bearer ${token}` } } : null;
       // mark this notification as read on the server if we have a token
       if (cfg) {
-        await axios.patch(`http://localhost:5000/api/notifications/${n._id}/read`, {}, cfg);
+        await axios.patch(`${API_URL}/api/notifications/${n._id}/read`, {}, cfg);
         setNotifications(prev => prev.map(p => p._id === n._id ? { ...p, read: true } : p));
       }
       // Navigate to link: prefer SPA navigation for internal links, fallback to full load for external
