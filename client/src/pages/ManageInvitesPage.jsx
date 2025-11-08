@@ -36,7 +36,6 @@ const ManageInvitesPage = () => {
     const [showRemoveModal, setShowRemoveModal] = useState(false);
     const [removeTarget, setRemoveTarget] = useState(null); // { memberUserId, username }
     const [isRemoving, setIsRemoving] = useState(false);
-    const API_URL = import.meta.env.VITE_API_URL;
 
     // --- Fetch Data from API ---
     useEffect(() => {
@@ -47,10 +46,10 @@ const ManageInvitesPage = () => {
              try {
         const config = { headers: { Authorization: `Bearer ${currentUserToken}` } };
                 const [wsRes, membersRes, invitesRes, usersRes] = await Promise.all([
-                    axios.get(`${API_URL}/api/workspaces/${workspaceId}`, config),
-                    axios.get(`${API_URL}/api/workspaces/${workspaceId}/members`, config),
-                    axios.get(`${API_URL}/api/invitations/workspace/${workspaceId}`, config),
-                    axios.get(`${API_URL}/api/users`, config)
+                    axios.get(`http://localhost:5000/api/workspaces/${workspaceId}`, config),
+                    axios.get(`http://localhost:5000/api/workspaces/${workspaceId}/members`, config),
+                    axios.get(`http://localhost:5000/api/invitations/workspace/${workspaceId}`, config),
+                    axios.get(`http://localhost:5000/api/users`, config)
                 ]);
                 setWorkspace(wsRes.data); // This now includes the populated owner object
                 setMembers(membersRes.data);
@@ -79,7 +78,7 @@ const ManageInvitesPage = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${currentUserToken}` } };
             const payload = { inviteeEmail, workspaceId };
-            const response = await axios.post(`${API_URL}/api/invitations`, payload, config);
+            const response = await axios.post('http://localhost:5000/api/invitations', payload, config);
             setInvitations(prev => [response.data, ...prev]);
             setInviteEmail('');
         } catch (err) {
@@ -115,7 +114,7 @@ const ManageInvitesPage = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${currentUserToken}` } };
             // Remove member on server
-            await axios.delete(`${API_URL}/api/workspaces/${workspaceId}/members/${memberUserId}`, config);
+            await axios.delete(`http://localhost:5000/api/workspaces/${workspaceId}/members/${memberUserId}`, config);
             // Update local members state
             const removedMembers = members.filter(m => m.user?._id === memberUserId);
             const removed = removedMembers[0];
@@ -150,7 +149,7 @@ const ManageInvitesPage = () => {
         setError('');
         try {
             const config = { headers: { Authorization: `Bearer ${currentUserToken}` } };
-            const res = await axios.post(`${API_URL}/api/invitations/resend/${inviteId}`, {}, config);
+            const res = await axios.post(`http://localhost:5000/api/invitations/resend/${inviteId}`, {}, config);
             // Use returned invitation (populated) to update local state
             const updatedInvite = res.data?.invitation;
             if (updatedInvite) {
@@ -179,7 +178,7 @@ const ManageInvitesPage = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${currentUserToken}` } };
             const payload = { inviteeEmail: invite.inviteeEmail, workspaceId };
-            const res = await axios.post(`${API_URL}/api/invitations`, payload, config);
+            const res = await axios.post('http://localhost:5000/api/invitations', payload, config);
             // Replace local placeholder (by _id) with server response, or prepend if missing
             setInvitations(prev => {
                 const found = prev.some(i => i._id === invite._id);

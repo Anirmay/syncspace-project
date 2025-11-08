@@ -20,9 +20,6 @@ const AuthPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // This is your live backend URL from the .env file
-    const API_URL = import.meta.env.VITE_API_URL;
-
     useEffect(() => {
         if (location.pathname === '/register') {
             setIsSignUp(true);
@@ -41,13 +38,8 @@ const AuthPage = () => {
         setLoading(true);
         setError(null);
         try {
-            // --- FIX #1 ---
-            // OLD: await axios.post('http://localhost:5000/api/auth/register', signUpData);
-            await axios.post(`${API_URL}/api/auth/register`, signUpData);
-            
-            // Replaced alert with console.log - alert() can be unreliable
-            console.log('Registration successful! Please sign in.');
-            alert('Registration successful! Please sign in.'); // Keeping alert as you had it, but console.log is safer
+            await axios.post('http://localhost:5000/api/auth/register', signUpData);
+            alert('Registration successful! Please sign in.');
             setIsSignUp(false);
             setLoading(false);
         } catch (err) {
@@ -61,10 +53,7 @@ const AuthPage = () => {
         setLoading(true);
         setError(null);
         try {
-            // --- FIX #2 ---
-            // OLD: const res = await axios.post('http://localhost:5000/api/auth/login', signInData);
-            const res = await axios.post(`${API_URL}/api/auth/login`, signInData);
-
+            const res = await axios.post('http://localhost:5000/api/auth/login', signInData);
             login(res.data);
             navigate('/');
             setLoading(false);
@@ -246,7 +235,7 @@ const AuthPage = () => {
                             </div>
                             <span>or use your email for registration</span>
                             <input type="text" placeholder="Username" name="username" value={signUpData.username} onChange={handleSignUpChange} required />
-                            <input type="email" placeholder="Email" name="email" value={signUpData.email} onChange={handleSignUpChange} required />
+                            <input typeMIMEType="email" placeholder="Email" name="email" value={signUpData.email} onChange={handleSignUpChange} required />
                             <input type="password" placeholder="Password" name="password" value={signUpData.password} onChange={handleSignUpChange} required />
                             
                             <div className="error-message">{isSignUp ? error : ''}</div>
@@ -296,3 +285,4 @@ const AuthPage = () => {
 };
 
 export default AuthPage;
+

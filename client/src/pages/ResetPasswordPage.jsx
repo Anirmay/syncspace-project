@@ -10,7 +10,6 @@ const ResetPasswordPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +22,7 @@ const ResetPasswordPage = () => {
     setError('');
     try {
       // Send PATCH request to backend
-      const response = await axios.patch(`${API_URL}/api/auth/reset-password/${token}`, { password });
+      const response = await axios.patch(`http://localhost:5000/api/auth/reset-password/${token}`, { password });
       setMessage(response.data.message + ' Redirecting to login...');
       // Optional: Automatically log user in using response.data.token and context
       setTimeout(() => {

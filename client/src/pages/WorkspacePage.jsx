@@ -46,7 +46,6 @@ import { useDroppable } from '@dnd-kit/core';
      const [error, setError] = useState('');
      // Safely get context value, provide default if null
      const { currentUser } = useContext(AuthContext) || { currentUser: null }; 
-     const API_URL = import.meta.env.VITE_API_URL;
  
      const handleSubmit = async (e) => {
          e.preventDefault();
@@ -60,7 +59,7 @@ import { useDroppable } from '@dnd-kit/core';
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}`, 'Content-Type': 'application/json' } };
              const payload = { title, description };
-             const response = await axios.patch(`${API_URL}/api/tasks/${task._id}`, payload, config);
+             const response = await axios.patch(`http://localhost:5000/api/tasks/${task._id}`, payload, config);
              
              // --- Pass the *full* updated task from the response ---
              onTaskUpdated(response.data); // This now includes column/status updates
@@ -123,7 +122,6 @@ import { useDroppable } from '@dnd-kit/core';
      const [error, setError] = useState('');
       // Safely get context value, provide default if null
      const { currentUser } = useContext(AuthContext) || { currentUser: null };
-     const API_URL = import.meta.env.VITE_API_URL;
  
      const handleSubmit = async (e) => {
          e.preventDefault();
@@ -140,7 +138,7 @@ import { useDroppable } from '@dnd-kit/core';
              const payload = { title, description, columnId, boardId, workspaceId, startDate: new Date() }; 
              
              // --- Ensure this route matches your backend (POST /api/tasks) ---
-             const response = await axios.post(`${API_URL}/api/tasks`, payload, config);
+             const response = await axios.post(`http://localhost:5000/api/tasks`, payload, config);
              
              onTaskAdded(response.data); // Pass the new task back
              onCancel();
@@ -874,20 +872,19 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
      const [taskToDelete, setTaskToDelete] = useState(null);
      const [isDeleting, setIsDeleting] = useState(false);
      const [overColumnId, setOverColumnId] = useState(null);
-        // IDs of columns that are valid drop targets for the currently dragged task
-        const [allowedTargetIds, setAllowedTargetIds] = useState([]);
-        const [editingTask, setEditingTask] = useState(null); // Task object for the DOC EDITOR
-        const [taskToEdit, setTaskToEdit] = useState(null); // Task object for the EDIT MODAL
-        const [showDeleteWorkspaceConfirm, setShowDeleteWorkspaceConfirm] = useState(false); // NEW: Workspace delete confirm state
-        const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false); // NEW: Workspace deleting state
-        // --- New: Workspace project chat state ---
-        const [workspaceChatOpen, setWorkspaceChatOpen] = useState(false);
-        const [workspaceChatMessages, setWorkspaceChatMessages] = useState([]);
-        const [workspaceChatInput, setWorkspaceChatInput] = useState('');
-        const [loadingWorkspaceChat, setLoadingWorkspaceChat] = useState(false);
-        // Toast (top sliding notification)
-        const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
-        const API_URL = import.meta.env.VITE_API_URL;
+    // IDs of columns that are valid drop targets for the currently dragged task
+    const [allowedTargetIds, setAllowedTargetIds] = useState([]);
+     const [editingTask, setEditingTask] = useState(null); // Task object for the DOC EDITOR
+     const [taskToEdit, setTaskToEdit] = useState(null); // Task object for the EDIT MODAL
+     const [showDeleteWorkspaceConfirm, setShowDeleteWorkspaceConfirm] = useState(false); // NEW: Workspace delete confirm state
+     const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false); // NEW: Workspace deleting state
+    // --- New: Workspace project chat state ---
+    const [workspaceChatOpen, setWorkspaceChatOpen] = useState(false);
+    const [workspaceChatMessages, setWorkspaceChatMessages] = useState([]);
+    const [workspaceChatInput, setWorkspaceChatInput] = useState('');
+    const [loadingWorkspaceChat, setLoadingWorkspaceChat] = useState(false);
+    // Toast (top sliding notification)
+    const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
  
  
      // --- Fetching Logic (Updated for Preview Handling) ---
@@ -915,16 +912,16 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
               if (isMounted) { setLoading(true); setError(''); }
               try {
                   const config = { headers: { Authorization: `Bearer ${currentUser.token}` } }; 
-                  const wsResponse = await axios.get(`${API_URL}/api/workspaces/${workspaceId}`, config);
+                  const wsResponse = await axios.get(`http://localhost:5000/api/workspaces/${workspaceId}`, config);
                   if (!isMounted) return; 
                   setWorkspace(wsResponse.data); 
-                  const boardsResponse = await axios.get(`${API_URL}/api/workspaces/${workspaceId}/boards`, config);
+                  const boardsResponse = await axios.get(`http://localhost:5000/api/workspaces/${workspaceId}/boards`, config);
                   if (!isMounted) return; 
                   const fetchedBoards = boardsResponse.data;
                   setBoards(fetchedBoards);
                   if (fetchedBoards.length > 0) {
                       const taskPromises = fetchedBoards.map(board =>
-                          axios.get(`${API_URL}/api/workspaces/${workspaceId}/boards/${board._id}/tasks`, config)
+                          axios.get(`http://localhost:5000/api/workspaces/${workspaceId}/boards/${board._id}/tasks`, config)
                                 .catch(err => { console.error(`Task fetch failed for ${board._id}:`, err); return { data: [] }; })
                       );
                       const taskResults = await Promise.all(taskPromises);
@@ -1151,7 +1148,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
           }
           const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
           try {
-              const response = await axios.patch(`${API_URL}/api/tasks/${taskToMove._id}/move`, {
+              const response = await axios.patch(`http://localhost:5000/api/tasks/${taskToMove._id}/move`, {
                   newColumnId: newColumnId,
                   newIndex: newIndex,
                   sourceColumnId: sourceColumnId
@@ -1176,8 +1173,8 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
      function handleDragEnd(event) {
          const { active, over } = event;
          setActiveTask(null);
-        setOverColumnId(null);
-        setAllowedTargetIds([]);
+    setOverColumnId(null);
+    setAllowedTargetIds([]);
  
          if (!over || active.id === over.id) return; 
  
@@ -1380,7 +1377,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
              const response = await axios.post(
-                 `${API_URL}/api/workspaces/${workspaceId}/boards`,
+                 `http://localhost:5000/api/workspaces/${workspaceId}/boards`,
                  { title: newBoardName },
                  config
              );
@@ -1396,39 +1393,39 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
          }
      };
 
-        // --- Workspace project chat helpers ---
-        const fetchWorkspaceChat = async () => {
-            if (!currentUser || !currentUser.token) return;
-            setLoadingWorkspaceChat(true);
-            try {
-                const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const res = await axios.get(`${API_URL}/api/messages/workspace/${workspaceId}`, config);
-                setWorkspaceChatMessages(res.data || []);
-            } catch (err) {
-                console.error('Failed to load workspace chat:', err);
-            } finally {
-                setLoadingWorkspaceChat(false);
-            }
-        };
+    // --- Workspace project chat helpers ---
+    const fetchWorkspaceChat = async () => {
+        if (!currentUser || !currentUser.token) return;
+        setLoadingWorkspaceChat(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+            const res = await axios.get(`http://localhost:5000/api/messages/workspace/${workspaceId}`, config);
+            setWorkspaceChatMessages(res.data || []);
+        } catch (err) {
+            console.error('Failed to load workspace chat:', err);
+        } finally {
+            setLoadingWorkspaceChat(false);
+        }
+    };
 
-        const sendWorkspaceChat = async (e) => {
-            e?.preventDefault?.();
-            if (!workspaceChatInput.trim()) return;
-            const tempId = `temp_${Date.now()}`;
-            const optimistic = { _id: tempId, text: workspaceChatInput, sender: { _id: currentUser?.user?._id, username: currentUser?.user?.username }, createdAt: new Date().toISOString() };
-            setWorkspaceChatMessages(prev => [...prev, optimistic]);
-            setWorkspaceChatInput('');
-            try {
-                if (!currentUser || !currentUser.token) throw new Error('Auth missing');
-                const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const res = await axios.post(`${API_URL}/api/messages/workspace`, { workspaceId, text: optimistic.text }, config);
-                setWorkspaceChatMessages(prev => prev.map(m => m._id === tempId ? res.data : m));
-            } catch (err) {
-                console.error('Failed to send workspace chat message:', err);
-                alert('Failed to send message');
-                setWorkspaceChatMessages(prev => prev.filter(m => m._id !== tempId));
-            }
-        };
+    const sendWorkspaceChat = async (e) => {
+        e?.preventDefault?.();
+        if (!workspaceChatInput.trim()) return;
+        const tempId = `temp_${Date.now()}`;
+        const optimistic = { _id: tempId, text: workspaceChatInput, sender: { _id: currentUser?.user?._id, username: currentUser?.user?.username }, createdAt: new Date().toISOString() };
+        setWorkspaceChatMessages(prev => [...prev, optimistic]);
+        setWorkspaceChatInput('');
+        try {
+            if (!currentUser || !currentUser.token) throw new Error('Auth missing');
+            const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
+            const res = await axios.post(`http://localhost:5000/api/messages/workspace`, { workspaceId, text: optimistic.text }, config);
+            setWorkspaceChatMessages(prev => prev.map(m => m._id === tempId ? res.data : m));
+        } catch (err) {
+            console.error('Failed to send workspace chat message:', err);
+            alert('Failed to send message');
+            setWorkspaceChatMessages(prev => prev.filter(m => m._id !== tempId));
+        }
+    };
 
     useEffect(() => {
         if (workspaceChatOpen) fetchWorkspaceChat();
@@ -1468,7 +1465,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
                  return;
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-             await axios.delete(`${API_URL}/api/tasks/${taskToDelete._id}`, config);
+             await axios.delete(`http://localhost:5000/api/tasks/${taskToDelete._id}`, config);
              
             handleDeleteTaskState(taskToDelete._id, columnId); 
             handleCloseDeleteConfirm();
@@ -1626,7 +1623,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
              // IMPORTANT: Ensure your backend has this route: DELETE /api/workspaces/:workspaceId
-             await axios.delete(`${API_URL}/api/workspaces/${workspaceId}`, config);
+             await axios.delete(`http://localhost:5000/api/workspaces/${workspaceId}`, config);
              
             // show top red toast for delete success then redirect
             handleCloseDeleteWorkspaceConfirm();

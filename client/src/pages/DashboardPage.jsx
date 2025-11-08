@@ -92,10 +92,6 @@ const DashboardPage = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate(); // Added useNavigate
 
-    // --- ADD THIS LINE ---
-    // This is your live backend URL from the .env file
-    const API_URL = import.meta.env.VITE_API_URL;
-
     // Function to fetch workspaces
     const fetchWorkspaces = async () => {
          // If there's no logged-in user, don't redirect — show public/empty state instead
@@ -109,9 +105,8 @@ const DashboardPage = () => {
          setError('');
          try {
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-             // --- FIX #1 ---
-             // OLD: const response = await axios.get('http://localhost:5000/api/workspaces/my', config); 
-             const response = await axios.get(`${API_URL}/api/workspaces/my`, config); 
+             // --- FIX: Correct API endpoint ---
+             const response = await axios.get('http://localhost:5000/api/workspaces/my', config); 
              // --- END FIX ---
              setWorkspaces(response.data);
             } catch (err) {
@@ -122,10 +117,10 @@ const DashboardPage = () => {
                  logout(); // Log out user
                  navigate('/login'); // Redirect to login
              }
-        } finally { 
+         } finally { 
              setLoading(false); 
-        }
-       };
+         }
+      };
 
     // Fetch workspaces on component mount
     useEffect(() => {
@@ -137,7 +132,7 @@ const DashboardPage = () => {
         // Refetch workspaces after creation (or after navigating back)
         // This ensures the new workspace appears
         fetchWorkspaces(); 
-       };
+     };
 
     const handleUpdateStatus = async (workspaceId, newStatus) => {
          setError(''); 
@@ -149,9 +144,7 @@ const DashboardPage = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
             // Ensure the route matches your backend (using :workspaceId likely)
-            // --- FIX #2 ---
-            // OLD: await axios.patch(`http://localhost:5000/api/workspaces/${workspaceId}/status`, { status: newStatus }, config);
-            await axios.patch(`${API_URL}/api/workspaces/${workspaceId}/status`, { status: newStatus }, config);
+            await axios.patch(`http://localhost:5000/api/workspaces/${workspaceId}/status`, { status: newStatus }, config);
         } catch (err) {
             setError(err.response?.data?.message || `Failed to update workspace status.`);
             console.error("Update status error:", err);
@@ -168,9 +161,9 @@ const DashboardPage = () => {
 
     return (
         <div className="min-h-screen font-inter bg-white text-slate-900 dark:bg-slate-900 dark:text-white p-8">
-             <Link to="/" className="text-indigo-400 hover:underline mb-4 hidden md:block">&larr; Back to Homepage</Link>
-             <header className="mb-8 flex flex-wrap justify-between items-center gap-4 bg-transparent"> {/* header */}
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Your Workspaces</h1>
+              <Link to="/" className="text-indigo-400 hover:underline mb-4 hidden md:block">&larr; Back to Homepage</Link>
+              <header className="mb-8 flex flex-wrap justify-between items-center gap-4 bg-transparent"> {/* header */}
+                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Your Workspaces</h1>
                                 <div className="flex items-center space-x-4"> {/* Grouped user info/actions */}
                                     {currentUser ? null : (
                                         <>
@@ -179,7 +172,7 @@ const DashboardPage = () => {
                                         </>
                                     )}
                                 </div>
-             </header>
+              </header>
 
             <div className="mb-10 px-0 sm:px-6"> {/* Adjusted padding */}
                 <CreateWorkspaceForm onWorkspaceCreated={handleWorkspaceCreated} />
