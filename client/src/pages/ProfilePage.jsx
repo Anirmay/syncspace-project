@@ -118,8 +118,8 @@ const ProfilePage = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8 font-inter">
-      <div className="container mx-auto max-w-2xl bg-slate-800 rounded-lg shadow-xl p-8 border border-slate-700 relative">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white p-4 sm:p-8 font-inter">
+      <div className="container mx-auto max-w-2xl bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-2xl p-6 sm:p-8 border border-slate-700/50 relative">
 
         {/* Edit/Cancel Button */}
         {!loading && profileData && (
@@ -140,72 +140,100 @@ const ProfilePage = () => {
         {profileData && !loading && !error && (
           <div className="space-y-6">
             {/* Profile Picture */}
-            <div className="flex justify-center">
-                <div className="w-32 h-32 bg-indigo-500 rounded-full flex items-center justify-center text-4xl font-bold border-4 border-slate-700">
+            <div className="flex justify-center mb-8">
+                <div className="w-32 h-32 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-4xl font-bold ring-4 ring-indigo-400/30 ring-offset-4 ring-offset-slate-800 shadow-xl transform hover:scale-105 transition-transform duration-300">
                     {profileData.username ? profileData.username.charAt(0).toUpperCase() : '?'}
                 </div>
             </div>
 
             {/* Name */}
-             <div className="p-4 bg-slate-700 rounded-md">
+             <div className="p-4 bg-slate-700/50 backdrop-blur-sm rounded-lg border border-slate-600/50 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
                <label htmlFor="name" className="text-sm text-slate-400 block mb-1">Name</label>
                {isEditing ? (
                    <input
                        type="text" id="name" value={name} onChange={(e) => setName(e.target.value)}
-                       className="w-full bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-indigo-500 outline-none text-white" // Added text-white
+                       className="w-full bg-slate-600/50 rounded-lg p-3 border border-slate-500/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 outline-none text-white placeholder-slate-400 transition-all duration-300"
                        placeholder="Your full name"
                    />
-               ) : ( <p className="text-lg font-semibold">{name || '(Not set)'}</p> )}
+               ) : ( <p className="text-lg font-semibold text-slate-100">{name || '(Not set)'}</p> )}
              </div>
 
             {/* Username */}
-             <div className="p-4 bg-slate-700 rounded-md">
-               <label htmlFor="username" className="text-sm text-slate-400 block mb-1">Username</label>
+             <div className="p-4 bg-slate-700/50 backdrop-blur-sm rounded-lg border border-slate-600/50 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
+               <label htmlFor="username" className="text-sm text-slate-400 block mb-1 font-medium">Username</label>
                {isEditing ? (
                     <input
                        type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)}
-                       className="w-full bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-indigo-500 outline-none text-white" // Added text-white
+                       className="w-full bg-slate-600/50 rounded-lg p-3 border border-slate-500/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 outline-none text-white placeholder-slate-400 transition-all duration-300"
+                       placeholder="Choose a username"
                     />
-               ) : ( <p className="text-lg font-semibold">{profileData.username}</p> )}
-          {usernameError && <p className="text-sm text-red-400 mt-1">{usernameError}</p>}
+               ) : ( <p className="text-lg font-semibold text-slate-100">{profileData.username}</p> )}
+          {usernameError && <p className="text-sm text-red-400 mt-2 bg-red-400/10 p-2 rounded-lg">{usernameError}</p>}
              </div>
 
             {/* About */}
-            <div className="p-4 bg-slate-700 rounded-md">
-              <label htmlFor="about" className="text-sm text-slate-400 block mb-1">About</label>
+            <div className="p-4 bg-slate-700/50 backdrop-blur-sm rounded-lg border border-slate-600/50 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
+              <label htmlFor="about" className="text-sm text-slate-400 block mb-1 font-medium">About</label>
               {isEditing ? (
                    <textarea
                        id="about" value={about} onChange={(e) => setAbout(e.target.value)}
-                       className="w-full bg-slate-600 rounded p-2 border border-slate-500 focus:border-indigo-500 focus:ring-indigo-500 outline-none h-24 resize-none text-white" // Added text-white
+                       className="w-full bg-slate-600/50 rounded-lg p-3 border border-slate-500/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 outline-none h-32 resize-none text-white placeholder-slate-400 transition-all duration-300"
                        placeholder="Tell us a bit about yourself..."
                    />
-              ) : ( <p className="text-lg italic text-slate-300">{about || '(Not set)'}</p> )}
+              ) : ( <p className="text-lg text-slate-300">{about || '(Not set)'}</p> )}
             </div>
 
             {/* Email */}
-            <div className="p-4 bg-slate-700 rounded-md">
-              <p className="text-sm text-slate-400">Email Address</p>
-              <p className="text-lg font-semibold text-slate-300">{profileData.email}</p>
-              {isEditing && <p className="text-xs text-slate-500 mt-1">Email address cannot be changed here.</p>}
+            <div className="p-4 bg-slate-700/50 backdrop-blur-sm rounded-lg border border-slate-600/50 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
+              <p className="text-sm text-slate-400 font-medium">Email Address</p>
+              <p className="text-lg font-semibold text-slate-100 mt-1">{profileData.email}</p>
+              {isEditing && <p className="text-xs text-slate-400 mt-2 bg-slate-600/30 p-2 rounded-lg">Email address cannot be changed here.</p>}
             </div>
 
             {/* Save/Cancel Buttons */}
             {isEditing && (
-                <div className="flex justify-center gap-4 mt-6"> {/* Use flex for better alignment */}
-                    <button onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Save Changes</button>
-                    <button onClick={handleEditToggle} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg transition-colors">Cancel</button>
+                <div className="flex justify-center gap-4 mt-8">
+                    <button 
+                        onClick={handleSave} 
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-800 shadow-lg hover:shadow-indigo-500/25"
+                    >
+                        Save Changes
+                    </button>
+                    <button 
+                        onClick={handleEditToggle} 
+                        className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 border border-slate-600 hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                    >
+                        Cancel
+                    </button>
                 </div>
             )}
-      {/* Success / Error messages for save */}
-      {saveSuccess && <p className="text-center text-green-400 mt-4">{saveSuccess}</p>}
-      {error && <p className="text-center text-red-500 mt-4">{error}</p>}
+            
+            {/* Success / Error messages for save */}
+            {saveSuccess && (
+                <div className="mt-6 text-center px-4 py-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400">
+                    <p>{saveSuccess}</p>
+                </div>
+            )}
+            {error && (
+                <div className="mt-6 text-center px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+                    <p>{error}</p>
+                </div>
+            )}
           </div>
         )}
 
         {/* Back Link */}
         {!isEditing && (
              <div className="mt-8 text-center">
-              <Link to="/" className="text-indigo-400 hover:text-indigo-300 transition-colors hidden md:block">&larr; Back to Home</Link>
+                <Link 
+                    to="/" 
+                    className="hidden md:flex items-center text-indigo-400 hover:text-indigo-300 transition-all duration-300 hover:translate-x-[-4px] group"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 transform transition-transform group-hover:translate-x-[-4px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Home
+                </Link>
             </div>
         )}
       </div>

@@ -271,20 +271,21 @@ const Header = () => {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
+            {/* Dark/Light toggle - always visible */}
+            <button onClick={toggleDarkMode} aria-label="Toggle dark mode" className="p-1 rounded-full hover:bg-slate-700 transition-colors" title="Toggle theme">
+              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-transparent">
+                <svg className={`w-5 h-5 transition-transform duration-500 ${isDarkModeLocal ? 'rotate-0 scale-100 text-yellow-400' : 'rotate-12 scale-95 text-slate-300'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  {isDarkModeLocal ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                  )}
+                </svg>
+              </div>
+            </button>
             {currentUser ? (
               <>
-                {/* Dark/Light toggle */}
-                <button onClick={toggleDarkMode} aria-label="Toggle dark mode" className="p-1 rounded-full hover:bg-slate-700 transition-colors" title="Toggle theme">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-transparent">
-                    <svg className={`w-5 h-5 transition-transform duration-500 ${isDarkModeLocal ? 'rotate-0 scale-100 text-yellow-400' : 'rotate-12 scale-95 text-slate-300'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      {isDarkModeLocal ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636M12 7a5 5 0 100 10 5 5 0 000-10z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                      )}
-                    </svg>
-                  </div>
-                </button>
+                {/* Additional authenticated user buttons */}
                 <Link to="/chat" className={iconClass('/chat')} aria-label="Chat">
                   <ChatBubbleIcon />
                   {chatUnreadTotal > 0 && (
