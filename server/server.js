@@ -24,7 +24,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",                     // Your local dev
+    "https://syncspace-project.netlify.app"      // 👈 ADD THIS: Your Netlify Frontend
+  ],
+  credentials: true // Required for cookies to work
+}));
+
 // Parse incoming requests with JSON payloads
 app.use(express.json());
 

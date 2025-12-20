@@ -106,7 +106,7 @@ const DashboardPage = () => {
          try {
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
              // --- FIX: Correct API endpoint ---
-             const response = await axios.get('http://localhost:5000/api/workspaces/my', config); 
+             const response = await axios.get('https://syncspace-project.onrender.com/api/workspaces/my', config); 
              // --- END FIX ---
              setWorkspaces(response.data);
             } catch (err) {
@@ -144,7 +144,7 @@ const DashboardPage = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
             // Ensure the route matches your backend (using :workspaceId likely)
-            await axios.patch(`http://localhost:5000/api/workspaces/${workspaceId}/status`, { status: newStatus }, config);
+            await axios.patch(`https://syncspace-project.onrender.com/api/workspaces/${workspaceId}/status`, { status: newStatus }, config);
         } catch (err) {
             setError(err.response?.data?.message || `Failed to update workspace status.`);
             console.error("Update status error:", err);

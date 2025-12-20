@@ -44,7 +44,7 @@ const FileUpload = ({ workspaceId, taskId, onUploaded }) => {
       if (taskId) fd.append('taskId', taskId);
 
       const cfg = { headers: { Authorization: `Bearer ${currentUser.token}`, 'Content-Type': 'multipart/form-data' } };
-      const res = await axios.post('http://localhost:5000/api/files', fd, cfg);
+      const res = await axios.post('https://syncspace-project.onrender.com/api/files', fd, cfg);
       setFile(null);
       setSuccess('Uploaded successfully');
       setTimeout(() => setSuccess(''), 2200);

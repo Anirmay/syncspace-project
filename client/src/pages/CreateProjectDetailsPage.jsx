@@ -66,7 +66,7 @@ const CreateProjectDetailsPage = () => {
             setFetchUsersError('');
             try {
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const response = await axios.get('http://localhost:5000/api/users', config);
+                const response = await axios.get('https://syncspace-project.onrender.com/api/users', config);
                 if (isMounted) {
                     setUserList(response.data);
                 }
@@ -110,7 +110,7 @@ const CreateProjectDetailsPage = () => {
             const payload = { name: projectName, description: description, membersToInvite: selectedMemberIds };
             console.log("Submitting final project data:", payload);
 
-            const res = await axios.post('http://localhost:5000/api/workspaces', payload, config);
+            const res = await axios.post('https://syncspace-project.onrender.com/api/workspaces', payload, config);
             // show top toast and then redirect to the created workspace
             setToast({ show: true, msg: 'Project created successfully', type: 'success' });
             const workspaceId = res.data?._id || res.data?.id;

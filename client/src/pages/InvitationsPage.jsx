@@ -36,8 +36,8 @@ const InvitationsPage = () => {
                 
                 // Fetch both lists in parallel
                 const [managedRes, pendingRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/workspaces/managed', config), // Fetches projects user owns/admins
-                    axios.get('http://localhost:5000/api/invitations/pending', config) // Fetches pending invites for user
+                    axios.get('https://syncspace-project.onrender.com/api/workspaces/managed', config), // Fetches projects user owns/admins
+                    axios.get('https://syncspace-project.onrender.com/api/invitations/pending', config) // Fetches pending invites for user
                 ]);
 
                 setOwnedProjects(managedRes.data);

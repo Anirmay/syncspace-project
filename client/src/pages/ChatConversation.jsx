@@ -20,7 +20,7 @@ const ChatConversation = () => {
         const fetchUser = async () => {
             try {
                 const cfg = currentUser?.token ? { headers: { Authorization: `Bearer ${currentUser.token}` } } : {};
-                const res = await axios.get(`http://localhost:5000/api/users/${userId}`, cfg);
+                const res = await axios.get(`https://syncspace-project.onrender.com/api/users/${userId}`, cfg);
                 setOtherUser(res.data);
             } catch (e) { /* ignore */ }
         };
@@ -33,7 +33,7 @@ const ChatConversation = () => {
             setLoading(true);
             try {
                 const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const res = await axios.get(`http://localhost:5000/api/messages/direct/${userId}`, cfg);
+                const res = await axios.get(`https://syncspace-project.onrender.com/api/messages/direct/${userId}`, cfg);
                 setMessages(res.data || []);
                 // clear unread for this user in localStorage map
                 try {
@@ -66,7 +66,7 @@ const ChatConversation = () => {
         setText('');
         try {
             const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-            const res = await axios.post('http://localhost:5000/api/messages/direct', { text, sender: currentUser.user._id, receiver: userId }, cfg);
+            const res = await axios.post('https://syncspace-project.onrender.com/api/messages/direct', { text, sender: currentUser.user._id, receiver: userId }, cfg);
             setMessages(prev => prev.map(m => m._id === tempId ? res.data : m));
         } catch (e) {
             setMessages(prev => prev.filter(m => m._id !== tempId));

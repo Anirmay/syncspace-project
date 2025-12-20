@@ -2,7 +2,7 @@
     import { AuthContext } from '../context/AuthContext';
     import { Link, useNavigate } from 'react-router-dom';
     import axios from 'axios'; // <-- Import Axios
-    const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:5000';
+    const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'https://syncspace-project.onrender.com';
 
     // Simple ToggleSwitch implementation
     const ToggleSwitch = ({ label, enabled, setEnabled }) => {

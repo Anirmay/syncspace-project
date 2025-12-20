@@ -33,7 +33,7 @@ const item = {
     show: { opacity: 1, x: 0 }
 };
 // Use Vite env var for API base, fallback to localhost backend
-const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:5000';
+const API_BASE = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'https://syncspace-project.onrender.com';
 
 // --- SVG Icons ---
 const KanbanIcon = () => (

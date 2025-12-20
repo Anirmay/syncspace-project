@@ -15,7 +15,7 @@ const ForgotPasswordPage = () => {
     setError('');
     try {
       // Ensure this URL is exactly as written
-      const response = await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
+      const response = await axios.post('https://syncspace-project.onrender.com/api/auth/forgot-password', { email });
 
       setMessage(response.data.message);
       // Display the token for testing

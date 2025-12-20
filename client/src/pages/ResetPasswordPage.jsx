@@ -22,7 +22,7 @@ const ResetPasswordPage = () => {
     setError('');
     try {
       // Send PATCH request to backend
-      const response = await axios.patch(`http://localhost:5000/api/auth/reset-password/${token}`, { password });
+      const response = await axios.patch(`https://syncspace-project.onrender.com/api/auth/reset-password/${token}`, { password });
       setMessage(response.data.message + ' Redirecting to login...');
       // Optional: Automatically log user in using response.data.token and context
       setTimeout(() => {

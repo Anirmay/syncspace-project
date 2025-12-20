@@ -49,14 +49,22 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
+      expiresIn: '1d',
     });
 
-    res.status(200).json({
-      message: 'Logged in successfully',
-      token,
-      user: { id: user._id, username: user.username, email: user.email },
-    });
+    // ✅ FIX: Send token as a Secure Cookie
+    res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: true,        // REQUIRED: for HTTPS (Render/Netlify)
+        sameSite: 'none',    // REQUIRED: allows Cross-Site cookies
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
+      })
+      .status(200)
+      .json({
+        message: 'Logged in successfully',
+        user: { id: user._id, username: user.username, email: user.email },
+      });
 
   } catch (error) {
     res.status(500).json({ message: 'Server error during login.', error: error.message });
@@ -101,7 +109,7 @@ exports.forgotPassword = async (req, res) => {
 
         // 5. Construct Reset URL (Use your frontend URL and the UNHASHED token)
         // IMPORTANT: Use your actual deployed frontend URL in production
-        const resetURL = `http://localhost:5173/reset-password/${resetToken}`; 
+        const resetURL = `https://syncspace-project.netlify.app/reset-password/${resetToken}`;
 
         // 6. Define Mail Options
         const mailOptions = {
@@ -190,3 +198,10 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+exports.logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none'
+  }).status(200).json({ message: 'Logged out successfully' });
+};

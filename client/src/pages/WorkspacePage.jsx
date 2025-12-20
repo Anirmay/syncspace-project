@@ -59,7 +59,7 @@ import { useDroppable } from '@dnd-kit/core';
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}`, 'Content-Type': 'application/json' } };
              const payload = { title, description };
-             const response = await axios.patch(`http://localhost:5000/api/tasks/${task._id}`, payload, config);
+             const response = await axios.patch(`https://syncspace-project.onrender.com/api/tasks/${task._id}`, payload, config);
              
              // --- Pass the *full* updated task from the response ---
              onTaskUpdated(response.data); // This now includes column/status updates
@@ -138,7 +138,7 @@ import { useDroppable } from '@dnd-kit/core';
              const payload = { title, description, columnId, boardId, workspaceId, startDate: new Date() }; 
              
              // --- Ensure this route matches your backend (POST /api/tasks) ---
-             const response = await axios.post(`http://localhost:5000/api/tasks`, payload, config);
+             const response = await axios.post(`https://syncspace-project.onrender.com/api/tasks`, payload, config);
              
              onTaskAdded(response.data); // Pass the new task back
              onCancel();
@@ -912,16 +912,16 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
               if (isMounted) { setLoading(true); setError(''); }
               try {
                   const config = { headers: { Authorization: `Bearer ${currentUser.token}` } }; 
-                  const wsResponse = await axios.get(`http://localhost:5000/api/workspaces/${workspaceId}`, config);
+                  const wsResponse = await axios.get(`https://syncspace-project.onrender.com/api/workspaces/${workspaceId}`, config);
                   if (!isMounted) return; 
                   setWorkspace(wsResponse.data); 
-                  const boardsResponse = await axios.get(`http://localhost:5000/api/workspaces/${workspaceId}/boards`, config);
+                  const boardsResponse = await axios.get(`https://syncspace-project.onrender.com/api/workspaces/${workspaceId}/boards`, config);
                   if (!isMounted) return; 
                   const fetchedBoards = boardsResponse.data;
                   setBoards(fetchedBoards);
                   if (fetchedBoards.length > 0) {
                       const taskPromises = fetchedBoards.map(board =>
-                          axios.get(`http://localhost:5000/api/workspaces/${workspaceId}/boards/${board._id}/tasks`, config)
+                          axios.get(`https://syncspace-project.onrender.com/api/workspaces/${workspaceId}/boards/${board._id}/tasks`, config)
                                 .catch(err => { console.error(`Task fetch failed for ${board._id}:`, err); return { data: [] }; })
                       );
                       const taskResults = await Promise.all(taskPromises);
@@ -1148,7 +1148,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
           }
           const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
           try {
-              const response = await axios.patch(`http://localhost:5000/api/tasks/${taskToMove._id}/move`, {
+              const response = await axios.patch(`https://syncspace-project.onrender.com/api/tasks/${taskToMove._id}/move`, {
                   newColumnId: newColumnId,
                   newIndex: newIndex,
                   sourceColumnId: sourceColumnId
@@ -1377,7 +1377,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
              const response = await axios.post(
-                 `http://localhost:5000/api/workspaces/${workspaceId}/boards`,
+                 `https://syncspace-project.onrender.com/api/workspaces/${workspaceId}/boards`,
                  { title: newBoardName },
                  config
              );
@@ -1399,7 +1399,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
         setLoadingWorkspaceChat(true);
         try {
             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-            const res = await axios.get(`http://localhost:5000/api/messages/workspace/${workspaceId}`, config);
+            const res = await axios.get(`https://syncspace-project.onrender.com/api/messages/workspace/${workspaceId}`, config);
             setWorkspaceChatMessages(res.data || []);
         } catch (err) {
             console.error('Failed to load workspace chat:', err);
@@ -1418,7 +1418,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
         try {
             if (!currentUser || !currentUser.token) throw new Error('Auth missing');
             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-            const res = await axios.post(`http://localhost:5000/api/messages/workspace`, { workspaceId, text: optimistic.text }, config);
+            const res = await axios.post(`https://syncspace-project.onrender.com/api/messages/workspace`, { workspaceId, text: optimistic.text }, config);
             setWorkspaceChatMessages(prev => prev.map(m => m._id === tempId ? res.data : m));
         } catch (err) {
             console.error('Failed to send workspace chat message:', err);
@@ -1465,7 +1465,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
                  return;
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-             await axios.delete(`http://localhost:5000/api/tasks/${taskToDelete._id}`, config);
+             await axios.delete(`https://syncspace-project.onrender.com/api/tasks/${taskToDelete._id}`, config);
              
             handleDeleteTaskState(taskToDelete._id, columnId); 
             handleCloseDeleteConfirm();
@@ -1623,7 +1623,7 @@ const KanbanBoard = ({ board, tasks, onAddTaskClick, onTaskClick, onConfirmDelet
              }
              const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
              // IMPORTANT: Ensure your backend has this route: DELETE /api/workspaces/:workspaceId
-             await axios.delete(`http://localhost:5000/api/workspaces/${workspaceId}`, config);
+             await axios.delete(`https://syncspace-project.onrender.com/api/workspaces/${workspaceId}`, config);
              
             // show top red toast for delete success then redirect
             handleCloseDeleteWorkspaceConfirm();

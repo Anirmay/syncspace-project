@@ -63,7 +63,7 @@ const ChatPage = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
                 // NEW Backend Endpoint needed: GET /api/users (should exclude current user)
-                const response = await axios.get(`http://localhost:5000/api/users`, config);
+                const response = await axios.get(`https://syncspace-project.onrender.com/api/users`, config);
                 // Filter out the current user from the list
                 const otherUsers = response.data.filter(user => user._id !== currentUser.user._id);
                 setUsers(otherUsers);
@@ -90,7 +90,7 @@ const ChatPage = () => {
                 if (!currentUser?.token) return;
                 try {
                     const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                    const res = await axios.get('http://localhost:5000/api/notifications', cfg);
+                    const res = await axios.get('https://syncspace-project.onrender.com/api/notifications', cfg);
                     const notifs = res.data || [];
                     const dmCounts = {};
                     notifs.forEach(n => {
@@ -133,7 +133,7 @@ const ChatPage = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
                 // NEW Backend Endpoint needed: GET /api/messages/direct/:userId
-                const response = await axios.get(`http://localhost:5000/api/messages/direct/${selectedUser._id}`, config);
+                const response = await axios.get(`https://syncspace-project.onrender.com/api/messages/direct/${selectedUser._id}`, config);
                 setMessages(response.data);
                 // we've opened this conversation — mark unread for this user as read
                 try {
@@ -146,7 +146,7 @@ const ChatPage = () => {
                     // Mark server-side direct-message notifications from this actor as read
                     try {
                         const cfg = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                        await axios.patch(`http://localhost:5000/api/notifications/markDirectRead/${selectedUser._id}`, {}, cfg);
+                        await axios.patch(`https://syncspace-project.onrender.com/api/notifications/markDirectRead/${selectedUser._id}`, {}, cfg);
                         // notify header to refresh quickly (it polls every 15s)
                         window.dispatchEvent(new CustomEvent('server-notification-received'));
                     } catch (e) {
@@ -232,7 +232,7 @@ const ChatPage = () => {
         const fetchUser = async () => {
             try {
                 const cfg = currentUser?.token ? { headers: { Authorization: `Bearer ${currentUser.token}` } } : {};
-                const res = await axios.get(`http://localhost:5000/api/users/${openId}`, cfg);
+                const res = await axios.get(`https://syncspace-project.onrender.com/api/users/${openId}`, cfg);
                 if (res?.data) {
                     setSelectedUser(res.data);
                     setUnreadMap(prev => { const copy = { ...prev }; if (copy[openId]) delete copy[openId]; return copy; });
@@ -271,7 +271,7 @@ const ChatPage = () => {
 
         try {
             const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-            const response = await axios.post('http://localhost:5000/api/messages/direct', newMessageData, config);
+            const response = await axios.post('https://syncspace-project.onrender.com/api/messages/direct', newMessageData, config);
 
              setMessages(prevMessages => prevMessages.map(msg =>
                  msg._id === tempMessageId ? response.data : msg

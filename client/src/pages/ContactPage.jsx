@@ -74,7 +74,7 @@ const ContactPage = () => {
         setShowSuccessAnimation(false);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/contact', formData);
+            const response = await axios.post('https://syncspace-project.onrender.com/api/contact', formData);
             setStatusMessage(response.data.message);
             setFormData({ name: '', email: '', subject: '', message: '' });
             setShowSuccessAnimation(true);

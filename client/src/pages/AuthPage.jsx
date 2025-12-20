@@ -38,7 +38,7 @@ const AuthPage = () => {
         setLoading(true);
         setError(null);
         try {
-            await axios.post('http://localhost:5000/api/auth/register', signUpData);
+            await axios.post('https://syncspace-project.onrender.com/api/auth/register', signUpData);
             alert('Registration successful! Please sign in.');
             setIsSignUp(false);
             setLoading(false);
@@ -53,7 +53,7 @@ const AuthPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/login', signInData);
+            const res = await axios.post('https://syncspace-project.onrender.com/api/auth/login', signInData);
             login(res.data);
             navigate('/');
             setLoading(false);
