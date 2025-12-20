@@ -1,37 +1,40 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User.js'); // Assuming your User model is here
+const User = require('../models/User.js');
 
 const protect = async (req, res, next) => {
   let token;
 
-  // Check if token exists in Authorization header (Bearer TOKEN)
-  if (
+  // ✅ 1. Check if token exists in Cookies (This is what makes it work!)
+  if (req.cookies.token) {
+    token = req.cookies.token;
+  }
+  // 2. Fallback: Check if token is in Authorization header
+  else if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+    token = req.headers.authorization.split(' ')[1];
+  }
 
-      // Verify token
+  // ✅ Verify whatever token we found
+  if (token) {
+    try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get user from the token (select excludes password)
-      // Attach user object to the request
+      // Get user from the token
       req.user = await User.findById(decoded.id).select('-password');
 
       if (!req.user) {
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
 
-      next(); // Proceed to the next middleware or route handler
+      next(); // Success! Move to the route
     } catch (error) {
       console.error('Token verification failed:', error);
       res.status(401).json({ message: 'Not authorized, token failed' });
     }
-  }
-
-  if (!token) {
+  } else {
+    // If no token found in Cookie OR Header
     res.status(401).json({ message: 'Not authorized, no token' });
   }
 };

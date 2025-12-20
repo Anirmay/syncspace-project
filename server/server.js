@@ -2,6 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+
 // Ensure .js extension is used for local file imports
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
@@ -15,6 +17,7 @@ import fileRoutes from './routes/file.routes.js';
 import invitationRoutes from './routes/invitation.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 
+
 // Load environment variables
 dotenv.config();
 
@@ -23,6 +26,9 @@ dotenv.config();
 // Enable Cross-Origin Resource Sharing for requests from your frontend
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(cookieParser()); 
+app.use(express.json());
 
 app.use(cors({
   origin: [
@@ -33,6 +39,7 @@ app.use(cors({
 }));
 
 // Parse incoming requests with JSON payloads
+app.use(cookieParser());
 app.use(express.json());
 
 // --- API Routes ---
