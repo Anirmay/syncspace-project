@@ -4,6 +4,11 @@ import App from './App.jsx';
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthContextProvider } from './context/AuthContext';
+import axios from 'axios'; // Import axios if it's not already there
+
+// ✅ GLOBAL FIX: Make axios always send cookies/credentials
+axios.defaults.withCredentials = true;
+axios.defaults.baseURL = "https://syncspace-project.onrender.com"; // Optional: Sets the base URL for everything
 
 // Apply persisted dark mode before React mounts to avoid a flash of incorrect theme.
 try {
