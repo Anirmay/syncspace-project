@@ -1,0 +1,6 @@
+base = "client"
+command = "npm ci && npm run build"
+publish = "dist"
+from = "/*"
+to = "/index.html"
+status = 200
