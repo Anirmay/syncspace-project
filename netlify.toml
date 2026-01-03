@@ -1,6 +1,9 @@
-base = "client"
-command = "npm ci && npm run build"
-publish = "dist"
-from = "/*"
-to = "/index.html"
-status = 200
+[build]
+  base = "client"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
