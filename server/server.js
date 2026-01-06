@@ -30,13 +30,30 @@ const PORT = process.env.PORT || 5000;
 app.use(cookieParser()); 
 app.use(express.json());
 
+// Configure allowed origins dynamically and include Netlify frontend domain(s)
+const allowedOrigins = [
+  "http://localhost:5173",                     // Your local dev
+  "https://syncspace-project.netlify.app",    // existing Netlify domain
+  "https://anirmay-syncspace.netlify.app",    // the deployed frontend origin seen in the screenshot
+  process.env.CLIENT_URL                          // option to set CLIENT_URL in env for flexibility
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",                     // Your local dev
-    "https://syncspace-project.netlify.app"      // 👈 ADD THIS: Your Netlify Frontend
-  ],
+  origin: function(origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      // For debugging in logs, you might want to console.warn the blocked origin here
+      callback(new Error('CORS policy: This origin is not allowed')); 
+    }
+  },
   credentials: true // Required for cookies to work
 }));
+
+// Ensure preflight requests are handled
+app.options('*', cors());
 
 // Parse incoming requests with JSON payloads
 app.use(cookieParser());
