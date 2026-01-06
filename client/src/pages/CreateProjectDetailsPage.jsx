@@ -112,13 +112,14 @@ const CreateProjectDetailsPage = () => {
 
             const res = await axios.post('https://syncspace-project.onrender.com/api/workspaces', payload, config);
             // show top toast and then redirect to the created workspace
+            setLoading(false); // Reset loading state on success
             setToast({ show: true, msg: 'Project created successfully', type: 'success' });
             const workspaceId = res.data?._id || res.data?.id;
             setTimeout(() => {
                 setToast({ show: false, msg: '', type: 'success' });
                 if (workspaceId) navigate(`/workspace/${workspaceId}`);
                 else navigate('/dashboard');
-            }, 800);
+            }, 2500); // Increased from 800ms to 2500ms so users can see the success message
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create project.');
             console.error("Final create project error:", err);
