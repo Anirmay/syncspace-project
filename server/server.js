@@ -52,9 +52,6 @@ app.use(cors({
   credentials: true // Required for cookies to work
 }));
 
-// Ensure preflight requests are handled (use '/*' to be compatible with path-to-regexp)
-app.options('/*', cors());
-
 // Parse incoming requests with JSON payloads
 app.use(cookieParser());
 app.use(express.json());
