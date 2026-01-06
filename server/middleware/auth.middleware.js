@@ -1,14 +1,14 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User.js');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-const protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   let token;
 
-  // ✅ 1. Check if token exists in Cookies (This is what makes it work!)
-  if (req.cookies.token) {
+  // Check if token exists in Cookies
+  if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
   }
-  // 2. Fallback: Check if token is in Authorization header
+  // Fallback: Check if token is in Authorization header
   else if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
@@ -16,7 +16,6 @@ const protect = async (req, res, next) => {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  // ✅ Verify whatever token we found
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -38,5 +37,3 @@ const protect = async (req, res, next) => {
     res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
-
-module.exports = { protect };
