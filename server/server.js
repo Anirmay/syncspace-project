@@ -34,18 +34,23 @@ app.use(express.json());
 const allowedOrigins = [
   "http://localhost:5173",                     // Your local dev
   "https://syncspace-project.netlify.app",    // existing Netlify domain
-  "https://anirmay-syncspace.netlify.app",    // the deployed frontend origin seen in the screenshot
-  process.env.CLIENT_URL                          // option to set CLIENT_URL in env for flexibility
+  "https://anirmay-syncspace.netlify.app",    // the deployed frontend origin
+  process.env.CLIENT_URL                       // option to set CLIENT_URL in env for flexibility
 ].filter(Boolean);
+
+// Function to check if origin is allowed (including Netlify preview URLs)
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // allow no-origin requests (mobile apps, curl, server-to-server)
+  if (allowedOrigins.includes(origin)) return true; // exact match
+  if (origin.endsWith('.netlify.app')) return true; // allow all Netlify deploy preview URLs
+  return false;
+};
 
 app.use(cors({
   origin: function(origin, callback) {
-    // allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      // For debugging in logs, you might want to console.warn the blocked origin here
       callback(new Error('CORS policy: This origin is not allowed')); 
     }
   },
