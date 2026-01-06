@@ -30,6 +30,8 @@ const handleContactForm = async (req, res) => {
                 user: process.env.EMAIL_USER, // Your Gmail address
                 pass: process.env.EMAIL_PASS, // Google App Password (NOT your regular Gmail password)
             },
+            connectionTimeout: 10000, // 10 seconds timeout
+            socketTimeout: 10000, // 10 seconds timeout
             // Optional: Add debug logging from nodemailer itself
             // logger: true,
             // debug: true, // Enable SMTP connection debug output
