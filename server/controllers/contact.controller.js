@@ -18,25 +18,25 @@ const handleContactForm = async (req, res) => {
     try {
         console.log("Validation passed. Configuring transporter...");
         console.log("Using Email User:", process.env.EMAIL_USER);
-        console.log("Using Email Host:", process.env.EMAIL_HOST);
-        console.log("Using Email Port:", process.env.EMAIL_PORT);
-        console.log("Using Email Secure:", process.env.EMAIL_SECURE);
         console.log("Using Email Pass:", process.env.EMAIL_PASS ? 'Exists' : 'MISSING!'); // Check if pass exists
 
-        // --- Configure Nodemailer Transporter ---
+        // --- Configure Nodemailer Transporter with Google SMTP ---
         const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            port: parseInt(process.env.EMAIL_PORT || '465', 10),
-            secure: process.env.EMAIL_SECURE === 'true',
+            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // Use TLS (not SSL)
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
+                user: process.env.EMAIL_USER, // Your Gmail address
+                pass: process.env.EMAIL_PASS, // Google App Password (NOT your regular Gmail password)
             },
+            connectionTimeout: 10000, // 10 seconds timeout
+            socketTimeout: 10000, // 10 seconds timeout
             // Optional: Add debug logging from nodemailer itself
             // logger: true,
             // debug: true, // Enable SMTP connection debug output
         });
-        console.log("Transporter configured.");
+        console.log("Transporter configured with Google SMTP.");
 
 
         // --- Define Mail Options ---
